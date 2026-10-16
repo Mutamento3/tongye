@@ -2722,7 +2722,7 @@ function making(){const el=$("#mkb");if(!el)return;const now=Date.now();const L=
 let SEEN=new Set();try{SEEN=new Set(JSON.parse(localStorage.getItem("journalSeen")||"[]"))}catch(e){}
 (()=>{let n=0;const t=setInterval(()=>{const db=window.__jdb;if(!db&&++n<40)return;clearInterval(t);if(!db)return;
  try{db.collection("day").onSnapshot(q=>{q.docs.forEach(d=>ingestDay(d.data()));home();making();if(typeof onLiveDay==="function")onLiveDay()},()=>{})}catch(e){}},500)})();
-try{const L=JSON.parse(localStorage.getItem("journalDays")||"{}"),ks=Object.keys(L);if(ks.length){ks.forEach(k=>{try{ingestDay(L[k])}catch(e){}});setTimeout(()=>{try{home();making()}catch(e){}},0)}}catch(e){}window.journalBuildDay=buildDay;
+try{const L=JSON.parse(localStorage.getItem("journalDays")||"{}"),ks=Object.keys(L);if(ks.length){ks.forEach(k=>{try{ingestDay(L[k])}catch(e){}});setTimeout(()=>{try{home();making()}catch(e){}},0)}}catch(e){}(()=>{let n=0;const t=setInterval(()=>{const db=window.__jdb;if(!db&&++n<40)return;clearInterval(t);if(!db)return;try{db.collection("notes").onSnapshot(q=>{window.__allNotes=q.docs.map(d=>d.data()).filter(x=>x&&x.text);try{nbox();home()}catch(e){}},()=>{})}catch(e){}},500)})();window.journalBuildDay=buildDay;
 
 /* 真的交给枫：写一张 ask/<id>，再往家里说一声；那边的 agent 做的时候往 day/<日期>.steps 写进度，这里跟着亮 */
 async function liveAsk(txt,ph){const db=window.__jdb;const id="a"+Date.now().toString(36);const k=day;
