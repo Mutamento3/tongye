@@ -5,7 +5,8 @@
 
 | 文件 | 是什么 |
 |---|---|
-| `../book/index.html` | 整个 App（主页 + 选日子 + 交给枫 + 编辑器），一个文件 |
+| `../book/app.html` | 整个 App（主页 + 选日子 + 交给枫 + 编辑器），一个文件，空的，部署用这份 |
+| `../book/index.html` | 同一个 App 带演示数据，只给仓库首页那台假手机看 |
 | `journal-backend.js` | 已经内嵌在页面里的适配层，单独放一份方便看 |
 | `journal-server.mjs` | 参考后端：存数据、存图、推送、给 agent 读原料 |
 | `journal-mcp.mjs` | 给 agent 的 MCP 工具（stdio），包在后端外面 |
@@ -13,7 +14,7 @@
 
 ## 三种跑法
 
-1. **只想自己拼着玩**：只要 `book/index.html`，浏览器直接打开。没有后端时全部存在这台设备（localStorage）。
+1. **只想自己拼着玩**：只要 `book/app.html`，浏览器直接打开。没有后端时全部存在这台设备（localStorage）。
 2. **在 claude.ai 里**：页面用 Claude 自己的运行时（db / assets / mcp），这一层什么都不做。
 3. **装进你自己的 App / 手机**：跑一个后端（参考实现，或者你的 App 自己写同样的路由），页面就自动换成后端存，两个人和 agent 都看得到同一份。
 
@@ -21,7 +22,7 @@
 cd server
 JOURNAL_TOKEN=换成一串随机字 node journal-server.mjs
 # 手机打开 http://<这台机器的地址>:8787/?token=同一串字
-# 想放进自己 App 的 WebView：加载同一个地址；或者把 book/index.html 打包进 App，
+# 想放进自己 App 的 WebView：加载同一个地址；或者把 book/app.html 打包进 App，
 #   注入 window.JOURNAL_API="https://你的域名/journal"; window.JOURNAL_TOKEN="…"
 ```
 
@@ -197,7 +198,8 @@ claude mcp add journal -e JOURNAL_URL=http://localhost:8787 -e JOURNAL_TOKEN=xxx
 
 ## 四、这个仓库里有什么
 
-- `book/index.html`：整个 App，一个文件，带演示数据（照片是作者自己拍的，话是改写过的演示句）。
+- `book/app.html`：整个 App，一个文件，空的，部署用这份。
+- `book/index.html`：同一个 App 带演示数据（照片是作者自己拍的，话是改写过的演示句），只给假手机看，别拿去部署。
 - `server/`：这份文档、`journal-server.mjs`（参考后端）、`journal-mcp.mjs`（给 agent 的工具）、`journal-backend.js`（页面里那层适配，单独放一份方便看）、`AGENT.md`。
 - 贴纸素材各自的出处和许可见仓库根目录的 `NOTICE.md`。
 - 不带的：Clawd on Desk 的螃蟹、三花猫、云宝动图。那组美术保留所有权利，不能再发，想用请去 [clawd-on-desk](https://github.com/rullerzhou-afk/clawd-on-desk) 问作者。

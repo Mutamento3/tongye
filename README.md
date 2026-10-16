@@ -6,7 +6,8 @@
 
 | 文件 | 是什么 |
 |---|---|
-| [`book/index.html`](book/index.html) | 整个本子，一个文件。主页（每一天的热力图、做好的页）→ 选一天 → 交给 AI 排一页 / 自己拼 → 编辑器 |
+| [`book/app.html`](book/app.html) | 整个本子，一个文件，**空的，自己用、部署都用这份**。主页（每一天的热力图、做好的页）→ 选一天 → 交给 AI 排一页 / 自己拼 → 编辑器 |
+| [`book/index.html`](book/index.html) | 同一个本子带演示数据，只给上面那台假手机看，别拿去部署 |
 | [`server/journal-server.mjs`](server/journal-server.mjs) | 参考后端，零依赖，Node 18+：存页面和批注、存图、推送改动、给 agent 读那天的原料 |
 | [`server/journal-mcp.mjs`](server/journal-mcp.mjs) | 给 agent 的 MCP 工具：读原料、放照片、写一页、报进度、看她改了什么、回批注 |
 | [`server/BACKEND.md`](server/BACKEND.md) | 接口说明，和「做 9.27 的日记」这句话说出口以后整条链怎么走 |
@@ -16,7 +17,7 @@
 
 | 想怎么用 | 要什么 |
 |---|---|
-| 自己拼着玩 | 只要 `book/index.html`，浏览器直接打开。东西存在这台设备上 |
+| 自己拼着玩 | 只要 `book/app.html`，浏览器直接打开。东西存在这台设备上 |
 | 两个人和 AI 一起写 | 跑参考后端，手机打开它给的地址；agent 装上 `journal-mcp.mjs` |
 | 装进自己的 App | 照 `BACKEND.md` 写同样的路由，或者直接用参考后端，WebView 加载它的地址 |
 
@@ -35,7 +36,7 @@ JOURNAL_TOKEN=换成一串随机字 node journal-server.mjs
 claude mcp add journal -e JOURNAL_URL=http://localhost:8787 -e JOURNAL_TOKEN=同一串字 -- node /你的路径/tongye/server/journal-mcp.mjs
 ```
 
-在 claude.ai 里打开 `book/index.html` 的话，页面用 Claude 自己的存储，调工具时找的连接器名叫「连环」（作者家里那个），换成你自己的连接器名就行，搜 `callTool("连环"` 那几处。
+在 claude.ai 里打开 `book/app.html` 的话，页面用 Claude 自己的存储，调工具时找的连接器名叫「连环」（作者家里那个），换成你自己的连接器名就行，搜 `callTool("连环"` 那几处。
 
 照片、聊天记录、吃了什么从哪来，`BACKEND.md` 第二节写了格式。参考后端先读 `server/journal-data/sources/` 里的几个 JSON，换成你自己的数据源就行。吃的那一栏能接 [吃了吗](https://github.com/TangfanOVO/have-you-eaten)。
 

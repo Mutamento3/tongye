@@ -25,7 +25,7 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PORT = +(process.env.PORT || 8787);
 const TOKEN = process.env.JOURNAL_TOKEN || "";
 const DATA = path.resolve(process.env.JOURNAL_DATA || path.join(HERE, "journal-data"));
-const PAGE = path.resolve(process.env.JOURNAL_PAGE || path.join(HERE, "..", "book", "index.html"));
+const PAGE = path.resolve(process.env.JOURNAL_PAGE || path.join(HERE, "..", "book", "app.html"));
 /* 原料：换成你自己的。照片索引的格式见 BACKEND.md「照片索引」 */
 const PHOTO_INDEX = process.env.PHOTO_INDEX || path.join(DATA, "sources", "photos.json");   // [{id,file,local:"2026-09-27 10:39",lat,lon,f,shutter,iso,focal,model,jpg}]
 const PHOTO_DIR = process.env.PHOTO_DIR || path.join(DATA, "sources", "photos");           // jpg 所在目录（jpg 字段相对它）
