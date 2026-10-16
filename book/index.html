@@ -7,6 +7,8 @@
 <title>我们的本子</title>
 </head>
 <body>
+<style>html,body{overflow-x:clip!important;overscroll-behavior:none}html:has(#shell:not(.off)),html:has(#shell:not(.off)) body{overflow:hidden!important;height:100%!important}.sh-cta{z-index:60!important}#shell>.scr{overflow-x:hidden!important;overscroll-behavior-x:none}</style>
+<script>document.addEventListener("scroll",function(e){var t=e.target;if(t&&t.classList&&t.classList.contains("scr")&&t.scrollLeft)t.scrollLeft=0},true)</script>
 
 <script>/* 我们的本子 · 后端适配层
  * 页面只认一套接口：window.claude.use("db" | "assets" | "mcp")，跟 claude.ai Artifact 的运行时一样。
