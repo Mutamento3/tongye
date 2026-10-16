@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>同页 · tongye</title>
+<meta name="description" content="人和 AI 一起写的手帐日记本。一天一页，两个人都能改、能批注。">
+<style>
+:root{--bg:#f1eee8;--card:#fffdf9;--ink:#2e2a26;--sub:#776f68;--hint:#9a918a;--line:rgba(46,42,38,.1);--on:#2e2a26;--on-ink:#f8f5f0}
+@media (prefers-color-scheme:dark){:root{--bg:#111318;--card:#1a1d24;--ink:#e9ecf1;--sub:#9aa3b0;--hint:#727b88;--line:rgba(255,255,255,.1);--on:#e9ecf1;--on-ink:#14161b}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.7 -apple-system,system-ui,"PingFang SC","Hiragino Sans GB",sans-serif}
+a{color:inherit}
+.top{max-width:980px;margin:0 auto;padding:28px 20px 6px}
+.top h1{margin:0;font-size:24px;letter-spacing:.02em}
+.top p{margin:2px 0 0;color:var(--sub);font-size:14px}
+.stage{max-width:980px;margin:18px auto 40px;padding:0 20px;display:flex;gap:28px;align-items:flex-start;justify-content:center;flex-wrap:wrap}
+.phone{width:390px;height:800px;max-width:100%;border-radius:44px;padding:10px;background:#0c0d10;
+  box-shadow:0 0 0 1px rgba(127,127,127,.2),0 40px 80px -40px rgba(0,0,0,.5);flex:none}
+.phone iframe{display:block;width:100%;height:100%;border:0;border-radius:34px;background:#000}
+.info{width:340px;max-width:100%;background:var(--card);border-radius:22px;padding:22px 22px 18px;box-shadow:0 0 0 1px var(--line)}
+.info .k{font-size:11px;letter-spacing:.18em;color:var(--hint);text-transform:uppercase}
+.info h2{margin:2px 0 6px;font-size:20px}
+.info p{margin:0 0 12px;color:var(--sub);font-size:14px}
+.info ol{margin:0 0 14px;padding-left:1.2em;color:var(--sub);font-size:13.5px}
+.info ol li{margin:2px 0}
+.info dl{margin:0 0 14px;display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13px}
+.info dt{color:var(--hint)}.info dd{margin:0}
+.row{display:flex;flex-wrap:wrap;gap:8px}
+.row a{display:inline-flex;align-items:center;height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--line);
+  color:var(--ink);font-size:13.5px;text-decoration:none}
+.row a.main{background:var(--on);color:var(--on-ink);border-color:transparent}
+.foot{max-width:980px;margin:0 auto 40px;padding:0 20px;color:var(--hint);font-size:12.5px;text-align:center}
+@media (max-width:760px){
+  .top{padding:18px 16px 0}.stage{padding:0 16px;gap:16px;margin-top:12px}
+  .phone{width:100%;height:78dvh;border-radius:30px;padding:6px}.phone iframe{border-radius:25px}
+  .info{width:100%}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>同页 · tongye</h1>
+  <p>人和 AI 一起写的手帐日记本。一天一页，两个人都能改、能批注。</p>
+</header>
+<main class="stage">
+  <div class="phone"><iframe src="book/index.html" title="同页 · 演示"></iframe></div>
+  <section class="info">
+    <div class="k">demo · 演示数据</div>
+    <h2>在手机里点点看</h2>
+    <p>主页是每一天的热力图和做好的页。点开一页就是编辑器，里面的东西都能动。</p>
+    <ol>
+      <li>点「最近的页」里任意一张，进编辑器</li>
+      <li>换版式、换风格，或者骰一个</li>
+      <li>右下角「＋」打字、放照片、贴贴纸</li>
+      <li>顶上「批注」，点纸上任意一处留一句</li>
+      <li>「存」存成一代，不喜欢随时换回来</li>
+    </ol>
+    <dl>
+      <dt>依赖</dt><dd>页面没有；后端 Node 18+，零依赖</dd>
+      <dt>数据</dt><dd>没接后端时存在这台设备上</dd>
+      <dt>协议</dt><dd>AGPL-3.0，商用可另外授权</dd>
+    </dl>
+    <div class="row">
+      <a class="main" href="https://github.com/TangfanOVO/tongye" target="_blank" rel="noopener">拿走</a>
+      <a href="book/index.html" target="_blank" rel="noopener">单独打开</a>
+      <a href="https://github.com/TangfanOVO/tongye/blob/main/server/BACKEND.md" target="_blank" rel="noopener">接后端</a>
+    </div>
+  </section>
+</main>
+<p class="foot">演示里的照片是作者拍的，对话是改写过的演示句。<a href="https://github.com/TangfanOVO/tongye">GitHub</a></p>
+</body>
+</html>
