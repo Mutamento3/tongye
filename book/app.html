@@ -1312,7 +1312,7 @@ button.qc b{position:absolute;right:3px;top:2px;font-size:8px;font-weight:500;op
 </div>
 <div class="app" id="app">
 <header class="top">
-  <h1>手帐零件册<small>拿 9.26 袋鼠岛试装 · 只用排版和线</small></h1>
+  <h1>同页<small></small></h1>
   <button class="tact tap" id="cfgBtn" aria-label="设置"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 6h9M15 6h2M3 14h2M8 14h9"/><circle cx="13.5" cy="6" r="1.8"/><circle cx="6.5" cy="14" r="1.8"/></svg><span>设置</span></button>
 </header>
 
@@ -1457,7 +1457,7 @@ button.qc b{position:absolute;right:3px;top:2px;font-size:8px;font-weight:500;op
   <button class="cfgnav tap" data-go="tune"><b>当前页手动微调</b><span id="sumTune"></span><i>›</i></button>
   <section><h4>署名</h4><p class="hint">印章、贴纸角上的小圆点、引用里的名字、批注都跟这里走。盖章时一个字配「批」，两个字配「批准」，三四个字刚好一方，英文盖成长条。</p>
    <div class="cfgrow"><label>她</label><input id="cfgHer" maxlength="10" autocomplete="off"><div class="pv" id="pvHer"></div></div>
-   <div class="cfgrow"><label>我</label><input id="cfgMe" maxlength="10" autocomplete="off"><div class="pv" id="pvMe"></div></div></section>
+   <div class="cfgrow"><label>我</label><input id="cfgMe" maxlength="10" autocomplete="off"><div class="pv" id="pvMe"></div></div><div class="cfgrow"><label>批章</label><button type="button" class="cfgsw tap" id="cfgSeal" role="switch" aria-checked="true"><i></i><span>页尾盖一枚</span></button></div></section>
   <section><h4>拆零件</h4><p class="hint">把页面上每个零件标出来，页底列出它吃什么数据。给做页面的人和 agent 对照用，平时用不到。</p><button class="xray-btn tap" id="xray" aria-pressed="false">拆零件</button></section>
  </div>
  <div class="cfgpage" data-p="order"><button class="cfgback tap" data-go="main">‹ 设置</button><p class="hint">↑↓ 调前后，「藏」先收起来不显示。「常用」永远在最前面。</p><div id="cfgOrder"></div></div>
@@ -1524,7 +1524,7 @@ const STOPS=[{n:"上岛",sub:"Penneshaw",t:"10:40",lat:-35.731,lon:137.94},{n:"�
 })();
 /* 09 红笔：量出那几个字在哪，沿着画两道 */
 function drawPen(){const s=$("#pensvg");s.innerHTML="";const box=$("#penwrap").getBoundingClientRect();
- [...$("#mk").getClientRects()].forEach((r,i)=>{const x0=r.left-box.left-2,x1=r.right-box.left+2,y=r.bottom-box.top-3;
+ [...($("#mk")?$("#mk").getClientRects():[])].forEach((r,i)=>{const x0=r.left-box.left-2,x1=r.right-box.left+2,y=r.bottom-box.top-3;
   const p=el("path",{d:handLine([[x0,y],[x0+(x1-x0)*.5,y+1],[x1,y-1]],40+i,.8),fill:"none",stroke:"var(--pen)","stroke-width":"1.6","stroke-linecap":"round"},s);
   const p2=el("path",{d:handLine([[x0+6,y+3],[x1-4,y+2.5]],60+i,.7),fill:"none",stroke:"var(--pen)","stroke-width":"1.1","stroke-linecap":"round",opacity:".7"},s);
   prepDraw(p,.1+i*.3,.6);prepDraw(p2,.4+i*.3,.5)});}
@@ -1842,7 +1842,7 @@ function applyCfg(){LIB.stamp.items.han.def=CFG.her||"幡";LIB.stamp.items.feng.
  const c=stampCells(CFG.me||"枫"),se=$("#seal");se.className="seal part"+(c.g2?" g2":"")+(c.wide?" wide":"");se.innerHTML=c.cells.map(x=>`<span>${esc(x)}</span>`).join("")+`<span class="who me"></span>`;
  se.setAttribute("aria-label",(CFG.me||"枫")+"批过");se.querySelector(".who").textContent=NM1("me");
  LIB.stamp.items.han.n=NM("her")+"的章";LIB.stamp.items.feng.n=NM("me")+"的章";$("#meStick").textContent="让"+NM("me")+"贴一张";
- $$(".stk.placed .who").forEach(x=>x.textContent=NM1(x.classList.contains("me")?"me":"her"))}
+ $$(".stk.placed .who").forEach(x=>x.textContent=NM1(x.classList.contains("me")?"me":"her"));document.documentElement.classList.toggle("no-seal",CFG.seal===false);const sb=$("#cfgSeal");if(sb)sb.setAttribute("aria-checked",String(CFG.seal!==false))}
 /* 天气：页面只存「哪天、在哪」；数值由 agent 查好写进 db 的 wx/<日期>，或者在这里手填 */
 let wxEdit=null;try{Object.assign(WX,JSON.parse(localStorage.getItem("journalWX")||"{}"))}catch(e){}
 const WX_CODES=[[0,"晴"],[1,"多云"],[3,"阴"],[51,"毛毛雨"],[61,"小雨"],[65,"大雨"],[71,"雪"]];
@@ -1891,7 +1891,7 @@ $("#cfgKaoHome").onclick=async()=>{const msg=$("#cfgKaoMsg");msg.textContent="�
   msg.textContent=n?`拿到 ${n} 个新的，放进「${cfgMood}」`:"这次拿到的都已经有了，或者显示不出来，再点一次试试"}
  catch(e){const c=e&&e.code;msg.textContent=c==="server_not_connected"?"没连上「连环」：在 claude.ai 设置 → 连接器里加上":c==="needs_reauth"?"「连环」要重新登录一下：claude.ai 设置 → 连接器":c==="not_in_manifest"||c==="approval_required"?"刚才没允许这页去家里拿，点一次再允许就好":c==="server_unavailable"?"家里暂时没应答，过一会儿再点":"没拿到："+(e&&e.message||"出错了")}};
 let hT;const onStampIn=()=>{clearTimeout(hT);hT=setTimeout(()=>{CFG.her=$("#cfgHer").value.trim()||"幡";CFG.me=$("#cfgMe").value.trim()||"枫";saveCfg();applyCfg();const pv=(id,t)=>{const x=stampSVG(t);$(id).innerHTML=x.svg.replace("<svg",'<svg style="width:'+Math.min(64,x.w)+'px"')};pv("#pvHer",CFG.her);pv("#pvMe",CFG.me);renderTray()},300)};
-$("#cfgHer").oninput=onStampIn;$("#cfgMe").oninput=onStampIn;
+$("#cfgHer").oninput=onStampIn;$("#cfgMe").oninput=onStampIn;$("#cfgSeal").onclick=()=>{CFG.seal=CFG.seal===false;saveCfg();applyCfg()};
 function openCfg(){renderCfg();cfgGo("main");$("#scrim").classList.add("on");$("#cfg").classList.add("on");buzz()}
 function closeCfg(){$("#cfg").classList.remove("on");if(!$("#sheet")||!$("#sheet").classList.contains("on"))$("#scrim").classList.remove("on")}
 $("#cfgBtn").onclick=openCfg;$("#cfgGrab").onclick=closeCfg;$("#scrim").addEventListener("click",closeCfg);addEventListener("keydown",e=>{if(e.key==="Escape")closeCfg()});
@@ -2414,7 +2414,7 @@ const PH={"017": "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEA
 /* 演示页：照片是她相册里的，话是去敏过的演示句，标着「演示」 */
 const PAGES={};
 Object.keys(PAGES).forEach(k=>delete PAGES[k]);
-const WK="日一二三四五六";const nmMe=()=>(window.NM?NM("me"):"枫"),nmHer=()=>(window.NM?NM("her"):"幡");
+const WK="日一二三四五六";const nmMe=()=>(typeof NM==="function"?NM("me"):"枫"),nmHer=()=>(typeof NM==="function"?NM("her"):"幡");const subOf=(k,v,add)=>{let R=null;try{R=LIVE[k]}catch(e){}const who=R&&R.by==="her"?nmHer():nmMe();if(R&&!R.sub&&EDATA[k]&&EDATA[k].layout)return LYN(EDATA[k].layout)+" · "+who+"排的";const s=v.sub||"";return add===false||/排的/.test(s)?s:(s?s+" · ":"")+who+"排的"};
 const key=d=>(d.getMonth()+1)+"."+d.getDate();
 const days=[];for(let d=new Date(Y,START[0]-1,START[1]);;d.setDate(d.getDate()+1)){days.push(new Date(d));if(key(d)===TODAY)break}
 /* 演示热度：有聊天记录的日子用真条数，其余按种子给，线上换成聊天记录的条数 */
@@ -2426,15 +2426,15 @@ function back(){if(ST.length<2)return;const cur=$("#"+ST.pop());cur.classList.re
 $$("#shell [data-back]").forEach(b=>b.onclick=back);
 window.__bzHome=()=>{try{home()}catch(e){console.warn(e)}};function home(){const n=days.length,done=Object.keys(DONE).length;
  $("#shWho").textContent=nmHer()+" & "+nmMe();
- $("#shSum").innerHTML=`从 ${START[0]}.${START[1]} 写到今天，第 <b>${n}</b> 天<br>做好了 <b>${done}</b> 页，还有 <b>${days.filter(d=>lvl(key(d))>=3&&!DONE[key(d)]).length}</b> 天聊得很多、还没做`;
+ $("#shSum").innerHTML=`从 ${START[0]}.${START[1]} 写到今天，第 <b>${n}</b> 天<br>做好了 <b>${done}</b> 页${(c=>c?`，还有 <b>${c}</b> 天聊得很多、还没做`:"")(days.filter(d=>lvl(key(d))>=3&&!DONE[key(d)]).length)}`;
  const first=days[0],lead=first.getDay();const cells=[];for(let i=0;i<lead;i++)cells.push(`<i class="no"></i>`);
  days.forEach(d=>{const k=key(d);cells.push(`<i data-d="${k}" style="--l:${lvl(k)}" class="${DONE[k]?"pg":""} ${k===TODAY?"td":""} ${typeof allNotes==="function"&&allNotes().some(n=>n.day===k)?"nt":""}" title="${k}"></i>`)});
  const w=Math.ceil(cells.length/7);let mr="";let lastM=0;for(let c=0;c<w;c++){const d=days[Math.max(0,c*7-lead)];const m=d?d.getMonth()+1:0;mr+=`<span>${m!==lastM?m+"月":""}</span>`;lastM=m}
  $("#heat").style.setProperty("--w",w);$("#heat").innerHTML=`<div class="mrow">${mr}</div><div class="grid">${cells.join("")}</div><div class="lg"><span class="lk"><i class="k pg"></i>做好的页<i class="k pg nt"></i>有批注<i class="k td"></i>今天</span><em>少 ${[0,1,2,3,4].map(l=>`<b style="--l:${l}"></b>`).join("")} 多</em></div>`;
  $$("#heat i[data-d]").forEach(x=>x.onclick=()=>openDay(x.dataset.d));
  const dn=x=>{const [m,d]=x.split(".").map(Number);return m*100+d};
- const recs=Object.entries(DONE).sort((a,b)=>dn(b[0])-dn(a[0])).map(([k,v])=>v.img?`<button class="card tap" data-open="${k}"><div class="im" style="background-image:url('${PH[v.img]||v.img}')"><span class="tag">${k} · ${v.at}</span></div><div class="tx"><b>${v.t}</b><span>${v.sub} · ${nmMe()}排的</span></div></button>`
-  :`<button class="card rcard tap" data-open="${k}"><div class="rc2"><div class="slip"><span class="c">吃了吗 · ${(PAGES[k]&&PAGES[k].food||{}).meal||""}</span><span class="c s">${v.at} · ${k}</span><hr>${((PAGES[k]&&PAGES[k].food||{}).items||[]).map(([n,r])=>`<span class="li"><b>${n}</b><i></i><em class="${r==="好吃"?"ok":""}">${r||"—"}</em></span>`).join("")}</div></div><div class="tx"><b>${v.t}</b><span>${v.sub} · 只记了吃的</span></div></button>`).join("");
+ const recs=Object.entries(DONE).sort((a,b)=>dn(b[0])-dn(a[0])).map(([k,v])=>v.img?`<button class="card tap" data-open="${k}"><div class="im" style="background-image:url('${PH[v.img]||v.img}')"><span class="tag">${k} · ${v.at}</span></div><div class="tx"><b>${v.t}</b><span>${subOf(k,v)}</span></div></button>`
+  :`<button class="card rcard tap" data-open="${k}"><div class="rc2"><div class="slip"><span class="c">${((PAGES[k]&&PAGES[k].food||{}).items||[]).length?"吃了吗 · "+(PAGES[k].food.meal||""):"没有照片的一页"}</span><span class="c s">${v.at?v.at+" · ":""}${k}</span><hr>${((PAGES[k]&&PAGES[k].food||{}).items||[]).map(([n,r])=>`<span class="li"><b>${n}</b><i></i><em class="${r==="好吃"?"ok":""}">${r||"—"}</em></span>`).join("")}</div></div><div class="tx"><b>${v.t}</b><span>${subOf(k,v,false)}${((PAGES[k]&&PAGES[k].food||{}).items||[]).length?" · 只记了吃的":""}</span></div></button>`).join("");
  $("#rec").innerHTML=recs;if(typeof stack==="function"){stack();today();look();nbox();$("#cvWho")&&($("#cvWho").textContent=nmHer()+" & "+nmMe());$("#cvN")&&($("#cvN").textContent=n)}$("#recN").textContent=Object.keys(DONE).length+" 页";
  $$("#rec [data-open]").forEach(b=>b.onclick=()=>{day=b.dataset.open;openEditor(b,"view")});$$("#rec [data-day]").forEach(b=>b.onclick=()=>openDay(b.dataset.day));
  const t=new Date();$("#shDate").textContent=`${TODAY} · ${["SUN","MON","TUE","WED","THU","FRI","SAT"][t.getDay()]}`}
@@ -2453,8 +2453,8 @@ $("#writeToday").onclick=()=>openDay(TODAY);$("#pickDay").onclick=()=>openDay(TO
 /* 聊天：发照片和一句话 → 他看图、查天气、挑原话、选版式 → 出一页 */
 let sel=new Set(),sent=false;
 function renderChat(){sent=false;sel=new Set((PHOTOS[day]||[]).slice(0,4));$("#chAv").textContent=[...nmMe()].pop();$("#chNm").textContent=nmMe();$("#chSt").textContent=`在 · 帮你排 ${day}`;
- $("#msgs").innerHTML="";addMe(`${day} 这天交给我吧。挑几张你喜欢的照片发过来，再说一句想要什么感觉——不说也行，我看着办。`,0);
- $("#chips").innerHTML=["安安静静的","复古一点","热闹一点，多贴点颜文字","海狮那张放大"].map(t=>`<button class="tap">${t}</button>`).join("");
+ $("#msgs").innerHTML="";addMe(window.journalBackend||window.__jdb?`${day} 这天交给我吧。挑几张你喜欢的照片发过来，再说一句想要什么感觉——不说也行，我看着办。`:`这一份还没接后端，我收不到。想让 AI 来排，照 README 把后端和 agent 接上；现在可以先回去点「自己拼」。`,0);
+ $("#chips").innerHTML=["安安静静的","复古一点","热闹一点，多贴点颜文字","第一张放大"].map(t=>`<button class="tap">${t}</button>`).join("");
  $$("#chips button").forEach(b=>b.onclick=()=>{const ta=$("#chIn");ta.value=(ta.value?ta.value+"，":"")+b.textContent;ta.focus();fit()});
  renderAtt();$("#chIn").value="帮我把这天排成一页";fit()}
 function renderAtt(){const ph=PHOTOS[day]||[];$("#att").innerHTML=ph.map(k=>`<label class="${sel.has(k)?"on":""}"><input type="checkbox" ${sel.has(k)?"checked":""} data-p="${k}"><img alt="" src="${PH[k]}"></label>`).join("")+`<label style="display:grid;place-items:center;background:var(--paper);box-shadow:inset 0 0 0 1.5px var(--line);color:var(--mute)"><input type="file" accept="image/*" multiple id="attFile">${ICON_PLUS}</label>`;
@@ -2471,7 +2471,7 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));
 $("#chSend").onclick=async()=>{if(sent)return;const txt=$("#chIn").value.trim();const ph=[...sel];if(!txt&&!ph.length)return;sent=true;buzz(10);
  const m=document.createElement("div");m.className="mg her";m.innerHTML=(ph.length?`<div class="ph ${ph.length===1?"n1":""}">${ph.slice(0,4).map(k=>`<img alt="" src="${PH[k]}">`).join("")}</div>`:"")+(txt?`<div class="bub">${txt.replace(/[<&]/g,c=>c==="<"?"&lt;":"&amp;")}</div>`:"")+`<div class="tm">${nmHer()} · ${now()}</div>`;
  $("#msgs").appendChild(m);$("#chIn").value="";fit();$("#att").style.display="none";$("#chips").style.display="none";scrollEnd();
- if(window.journalBackend){await liveAsk(txt,ph);return}
+ if(window.journalBackend||window.__jdb){await liveAsk(txt,ph);return}await addMe("这一份还没接后端，"+nmMe()+"收不到。想让 AI 来排，照 README 把后端和 agent 接上；现在可以先回去点「自己拼」。",400);return;
  const want=/复古|旧|欧式/.test(txt)?["academia","学院手抄","复古一点"]:/热闹|颜文字|可爱/.test(txt)?["memphis","孟菲斯","热闹一点"]:/胶片/.test(txt)?["film","复古胶片","胶片味"]:["qingmo","青墨素纸","下雨天，安静一点"];
  const deco=/热闹|颜文字|复古|装饰|贴/.test(txt);
  await typing(900);await addMe(`收到${ph.length?" "+ph.length+" 张":""}。我先看看照片。`);
@@ -2482,8 +2482,8 @@ $("#chSend").onclick=async()=>{if(sent)return;const txt=$("#chIn").value.trim();
  await addMe(`排好了。海狮那张我留得最大，雨里慢慢往岸上走的那只。你看看喜不喜欢，不喜欢就骰一下，或者直接在上面改。`);
  const card=await addMe(`<button class="done tap"><div class="im" style="background-image:url('${PH["017"]}')"></div><div class="tx"><b>${day} · 这一天的标题</b><span>单栏流 × ${want[1]}${deco?" · 带装饰":""} · 第 1 代</span><span class="btn pri">打开这一页</span></div></button>`,400);
  card.querySelector(".done").onclick=e=>openEditor(e.currentTarget,"chat",{style:want[0],deco})};
-$("#toChat").onclick=()=>{if(!window.journalBackend&&!PHOTOS[day]&&day!=="9.26"){day="9.26";renderDay();toast2("演示里先拿 9.26 这一天做");return}renderChat();go("sChat")};
-$("#toSelf").onclick=e=>{if(!DONE[day]){toast2("这天还没有页：先交给"+nmMe()+"排一页，排好了就能自己改");return}openEditor(e.currentTarget,"view")};
+$("#toChat").onclick=()=>{renderChat();go("sChat")};
+$("#toSelf").onclick=e=>{if(!DONE[day]){const R={day:day,status:"done",by:"her",title:"",ts:Date.now()};try{ingestDay(R)}catch(_){}if(!DONE[day]){toast2("这天还没有页：先交给"+nmMe()+"排一页，排好了就能自己改");return}try{const db=window.__jdb;db&&db.collection("day").doc(day).set(R)}catch(_){}if(!window.__jdb){try{const L=JSON.parse(localStorage.getItem("journalDays")||"{}");L[day]=R;localStorage.setItem("journalDays",JSON.stringify(L))}catch(_){}}}openEditor(e.currentTarget,"view")};
 
 /* 看一页：别的日子的演示页，用同一套手帐零件画出来 */
 const esc2=t=>String(t).replace(/[<&>]/g,c=>({"<":"&lt;","&":"&amp;",">":"&gt;"}[c]));
@@ -2504,7 +2504,7 @@ function openPage(k,from){const v=PAGES[k];if(!v)return;const [m,d]=k.split(".")
   ${v.strip?`<div class="pv-strip">${v.strip.map(i=>`<img alt="" src="${PH[i]}">`).join("")}</div><p class="pv-cap">${esc2(v.stripCap)}</p>`:""}
   <div class="pv-end"><span class="pv-kao">${esc2(v.kao||"")}</span><span class="pv-seal">${[...nmMe()].pop()}<br>批</span></div>
  </article>`;
- $("#pvTitle").textContent=k+" · "+v.at.split(" · ")[0];$("#pvSub").textContent=v.sub+" · "+nmMe()+"排的";
+ $("#pvTitle").textContent=k+" · "+v.at.split(" · ")[0];$("#pvSub").textContent=subOf(k,v);
  $("#sPage").scrollTop=0;go("sPage");setTimeout(()=>$$("#pvBody .pv>*").forEach((x,i)=>{x.style.animationDelay=(i*60)+"ms";x.classList.add("rise")}),20)}
 $("#pvEdit").onclick=()=>toast2("演示里只有 9.26 能进编辑器 · 正式版每一页都能骰、能贴");
 function toast2(t){window.toast?toast(t):0}
@@ -2514,7 +2514,7 @@ function openEditor(fromEl,mode,opt={}){enterDay(day,mode);const r=fromEl.getBou
  requestAnimationFrame(()=>{z.style.left="0px";z.style.top="0px";z.style.width=innerWidth+"px";z.style.height=innerHeight+"px";z.style.borderRadius="0";z.style.opacity=".0"});
  setTimeout(()=>{$("#shell").classList.add("off");const pg=$("#page");$$("#page>.blk").forEach((b,i)=>b.style.setProperty("--k",i));pg.classList.remove("enter");void pg.offsetWidth;pg.classList.add("enter");setTimeout(()=>pg.classList.remove("enter"),1800)},180);
  setTimeout(()=>z.remove(),700);
- const h=$(".top h1");if(h)h.innerHTML=`${day} · ${(DONE[day]&&DONE[day].at||"袋鼠岛").split(" · ")[0]}<small>${mode==="chat"?nmMe()+"排的 · 第 1 代 · 不喜欢就骰一下":mode==="self"?"自己拼 · 骰子、贴纸、引用都在下面":"做好的一页 · 随时还能改"}</small>`;
+ const h=$(".top h1");if(h)h.innerHTML=`${day}${DONE[day]&&DONE[day].at?" · "+DONE[day].at.split(" · ")[0]:""}<small>${mode==="chat"?nmMe()+"排的 · 第 1 代 · 不喜欢就骰一下":mode==="self"?"自己拼 · 骰子、贴纸、引用都在下面":"做好的一页 · 随时还能改"}</small>`;
  if(mode==="chat"){try{if(window.applyStyle)applyStyle(opt.style,{instant:true});if(window.applyLayout)applyLayout("column",{instant:true})}catch(e){}
   if(opt.deco&&!G('decoOn')){const b=$("#decoBtn");b&&b.click()}
   setTimeout(()=>{toast2(nmMe()+(day==="9.26"?"排好了 · 海狮旁边有他留的一句":"排好了 · 不喜欢就骰一下"));try{const pin=$$(".npin.me")[0];pin&&pin.classList.add("new")}catch(e){}},1200)}
@@ -2632,7 +2632,7 @@ function buildDay(R){const k=R.day;const [m,d]=k.split(".").map(Number);const ph
  const wx=R.wx||{};const route=stops.map(s=>s.n).filter((v,i,a)=>a.indexOf(v)===i).join(" → ");
  const wxT=R.wxText||((wx.code!=null?`<b>${E2(W(wx.code))}</b> `:"")+(wx.lo!=null?`${Math.round(wx.lo)}–${Math.round(wx.hi)}°C`:"")+(wx.wind?` · 风 ${Math.round(wx.wind)} km/h`:"")+(wx.mm?` · 雨 ${wx.mm} mm`:"")+`<br>${E2(route||R.at||"")}${shots.length?` · 照片 ${shots.length} 张`:""}`);
  const mark=t=>E2(t).replace(/\[\[(.+?)\]\]/,'<span class="mk" id="mk">$1</span>');const herTag=t=>E2(t).replace(/&lt;her&gt;(.+?)&lt;\/her&gt;/g,'<span class="her">$1</span>');
- const qu=T.quote||(her[0]&&{p:her[her.length>1?1:0].p,t:k+" "+(her[her.length>1?1:0].t||"")});
+ const qu=T.quote||R.quote||(her[0]&&{p:her[her.length>1?1:0].p,t:k+" "+(her[her.length>1?1:0].t||"")});
  const f=R.food;const off=[];
  if(!hero)off.push("he");if(stops.length<1)off.push("ro");if(!shp)off.push("sh","p2");else if(!T.p2)off.push("p2");if(pairs.length<2)off.push("pa","an");else if(!T.ann)off.push("an");if(!T.pen)off.push("pe");if(shots.length<3)off.push("su");if(!f)off.push("tk");if(!qu)off.push("qu");
  const hp=hero&&hero.lat!=null?hero:ph.find(p=>p.lat!=null);
@@ -2655,7 +2655,7 @@ function ingestDay(R){if(!R||!R.day)return;LIVE[R.day]=R;if(R.status==="making"&
   DONE[R.day]={t:P.t,img:photos[0]||null,at:P.at,sub:R.sub||`${LYN(D.layout)} · ${R.by==="her"?nmHer():nmMe()}排的`,page:1};
   const WXo=G('WX');if(WXo&&R.wx&&R.wx.code!=null&&R.wx.hi!=null)WXo[R.day]=Object.assign({at:R.at||"",src:R.wx.src||"agent 写的"},R.wx);const C=G('CHATLOG'),F=G('FOODLOG');if(C&&R.chat)C[R.day]=R.chat.map(x=>({w:x.w,t:x.t||"",p:x.p,src:x.src||"原话"}));if(F&&R.food)F[R.day]=(R.food.items||[]).map(([dd,r],i,a)=>({meal:R.food.meal,at:R.food.at,t:R.food.t||"",dish:dd,rate:r,q:i===a.length-1?R.food.q:""}));
   if(document.documentElement.classList.contains("app-mode")&&CURDAY===R.day){fillDay(R.day);setTimeout(()=>{try{drawUL();drawBars();drawPen();drawPins()}catch(e){}},60);toast2(nmMe()+"刚更新了这一页")}}catch(e){console.warn("buildDay",R.day,e)}}
-function making(){const el=$("#mkb");if(!el)return;const now=Date.now();const L=Object.values(LIVE).filter(r=>r.status==="making"||(r.status==="done"&&now-(r.ts||0)<6*3600e3&&!SEEN.has(r.day+":"+r.ts)));
+function making(){const el=$("#mkb");if(!el)return;const now=Date.now();const L=Object.values(LIVE).filter(r=>r.status==="making"||(r.status==="done"&&r.by!=="her"&&now-(r.ts||0)<6*3600e3&&!SEEN.has(r.day+":"+r.ts)));
  if(!L.length){el.innerHTML="";return}L.sort((a,b)=>(b.ts||0)-(a.ts||0));const r=L[0];const st=(r.steps||[]).slice(-1)[0];
  el.innerHTML=r.status==="making"?`<div class="mkb run"><i></i><span><b>${nmMe()}在做 ${r.day}</b><small>${E2(st?st.a+(st.b?" · "+st.b:""):"在读这天的照片和聊天")}</small></span></div>`
   :`<button class="mkb ok tap" data-mk="${r.day}"><i></i><span><b>${nmMe()}做好了 ${r.day} · ${E2(r.title||"")}</b><small>点开看看，不喜欢就骰一下</small></span></button>`;
@@ -2663,7 +2663,7 @@ function making(){const el=$("#mkb");if(!el)return;const now=Date.now();const L=
 let SEEN=new Set();try{SEEN=new Set(JSON.parse(localStorage.getItem("journalSeen")||"[]"))}catch(e){}
 (()=>{let n=0;const t=setInterval(()=>{const db=window.__jdb;if(!db&&++n<40)return;clearInterval(t);if(!db)return;
  try{db.collection("day").onSnapshot(q=>{q.docs.forEach(d=>ingestDay(d.data()));home();making();if(typeof onLiveDay==="function")onLiveDay()},()=>{})}catch(e){}},500)})();
-window.journalBuildDay=buildDay;
+try{const L=JSON.parse(localStorage.getItem("journalDays")||"{}"),ks=Object.keys(L);if(ks.length){ks.forEach(k=>{try{ingestDay(L[k])}catch(e){}});setTimeout(()=>{try{home();making()}catch(e){}},0)}}catch(e){}window.journalBuildDay=buildDay;
 
 /* 真的交给枫：写一张 ask/<id>，再往家里说一声；那边的 agent 做的时候往 day/<日期>.steps 写进度，这里跟着亮 */
 async function liveAsk(txt,ph){const db=window.__jdb;const id="a"+Date.now().toString(36);const k=day;
@@ -2686,7 +2686,7 @@ const top=$(".top");if(top){const b=document.createElement("button");b.className
 const cover=$("#cover");if(cover){cover.onclick=()=>{cover.classList.add("open");buzz(12)};}
 /* 批注：读 NOTES；看过的记在这台设备上，红点就不亮了 */
 const DEMO_NOTE={id:"none",day:"",who:"me",text:"",at:0,re:null,b:"he"};
-const allNotes=()=>(G('NOTES')||[]).filter(x=>x&&x.text);
+const allNotes=()=>{const a=(G('NOTES')||[]).filter(x=>x&&x.text);if(window.journalBackend||window.__jdb)return a;const ids=new Set(a.map(n=>n.id));try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(!/^journalNotes:/.test(k))continue;JSON.parse(localStorage.getItem(k)||'[]').forEach(n=>{if(n&&n.text&&!ids.has(n.id)){ids.add(n.id);a.push(n)}})}}catch(e){}return a};
 let READ=new Set();try{READ=new Set(JSON.parse(localStorage.getItem("journalNotesRead")||"[]"))}catch(e){}
 const unread=()=>allNotes().filter(n=>n.who==="me"&&!READ.has(n.id));
 function nbox(){const L=allNotes(),u=unread();const last=L.slice().sort((a,b)=>b.at-a.at)[0];const b=$("#nbox");
@@ -2712,8 +2712,8 @@ function today(){const t=new Date(),W=["SUN","MON","TUE","WED","THU","FRI","SAT"
  const prev=Object.keys(C).filter(k=>(C[k]||[]).some(x=>x.w==="her")).sort((a,b)=>{const f=x=>x.split(".").map(Number);const [am,ad]=f(a),[bm,bd]=f(b);return bm-am||bd-ad})[0];const q=prev&&C[prev].filter(x=>x.w==="her").slice(-1)[0];
  $("#todayC").innerHTML=`<div class="r1"><b>${TODAY} <small style="font:500 11px var(--mono);color:var(--mute);letter-spacing:.12em">${W[t.getDay()]}</small></b><span>${wx?`${wx.at} · ${G('WORD')(wx.code)} ${wx.lo}–${wx.hi}°C`:"天气：一传照片就知道"}</span></div>
  ${q?`<p class="q">${q.p}<small>${prev===key(new Date(Date.now()-864e5))?"昨天":prev} · ${nmHer()}说的${q.src&&q.src!=="原话"?" · "+q.src:""}</small></p>`:""}
- <div class="st"><span>今天还没写</span><u class="tap" id="tdGo">现在写</u></div>`;$("#tdGo").onclick=()=>openDay(TODAY)}
-let lookK=null;function look(roll){const ks=Object.keys(DONE).filter(k=>DONE[k].img);if(!ks.length){$("#lookC").innerHTML="";return}if(!lookK||roll||!DONE[lookK]){const c=ks.filter(k=>k!==lookK);lookK=c.length?c[Math.floor(Math.random()*c.length)]:ks[0]}const k=lookK,v=DONE[k];const [m,d]=k.split(".").map(Number);const diff=Math.round((new Date()-new Date(Y,m-1,d))/864e5);
+ <div class="st"><span>${DONE[TODAY]?"今天写好了":"今天还没写"}</span><u class="tap" id="tdGo">${DONE[TODAY]?"打开":"现在写"}</u></div>`;$("#tdGo").onclick=()=>openDay(TODAY)}
+let lookK=null;function look(roll){const ks=Object.keys(DONE).filter(k=>DONE[k].img);if(!ks.length){$("#lookC").innerHTML="";$("#lookC").previousElementSibling.style.display="none";return}if(!lookK||roll||!DONE[lookK]){const c=ks.filter(k=>k!==lookK);lookK=c.length?c[Math.floor(Math.random()*c.length)]:ks[0]}const k=lookK,v=DONE[k];$("#lookC").previousElementSibling.style.display="";const [m,d]=k.split(".").map(Number);const diff=Math.round((new Date()-new Date(Y,m-1,d))/864e5);
  $("#lookC").innerHTML=`<button class="look tap" data-open="${k}"><span class="im" style="background-image:url('${PH[v.img]||v.img}')"></span><span><em>${diff} 天前 · ${k}</em><b>${v.t}</b><span>${v.at} · ${PAGES[k]&&PAGES[k].p?PAGES[k].p.slice(0,22)+"…":""}</span></span></button>`;
  $("#lookC .look").onclick=e=>{day=k;openEditor(e.currentTarget,"view")};if(roll){const c=$("#lookC");c.classList.remove("swap");void c.offsetWidth;c.classList.add("swap")}}
 $("#lookN").onclick=()=>{const b=$("#lookN");b.classList.remove("spin");void b.offsetWidth;b.classList.add("spin");look(true);buzz(5)};
@@ -2741,5 +2741,7 @@ home();
 })();
 </script>
 
+<style>/* 审阅修补（1017） */:root{--mute:#707376}:root[data-style="swiss"]{--mute:#757575}:root[data-style="editorial"]{--mute:#716E68}:root[data-style="mono"]{--mute:#757575}:root[data-style="bauhaus"]{--mute:#6F6B64}:root[data-style="memphis"]{--mute:#737385}:root[data-style="film"]{--mute:#6E665A}:root[data-style="sketch"]{--mute:#737373}:root[data-style="eink"]{--mute:#676762}:root[data-style="academia"]{--mute:#75634D}:root[data-style="nature"]{--mute:#736B5E}:root[data-style="bigtype"]{--mute:#757575}:root[data-style="pixel"]{--mute:#696984}:root[data-style="chaos"]{--mute:#727272}:root[data-style="cyan"]{--mute:#56718D}:root[data-style="kraft"]{--mute:#503C25}:root[data-style="news"]{--mute:#686660}#shell{--mute:#6E7276}@media (prefers-color-scheme:dark){#shell{--mute:#8E9297}}.sh-ic,.app-mode .top .backhome{position:relative}.sh-ic::before,.app-mode .top .backhome::before{content:"";position:absolute;left:50%;top:50%;width:44px;height:44px;transform:translate(-50%,-50%)}.dz,.ar,.ink,.lnk,.cats button,.tray .days2 button{position:relative}.dz::before,.ar::before,.ink::before,.lnk::before{content:"";position:absolute;left:50%;top:50%;width:max(100%,44px);height:max(100%,44px);transform:translate(-50%,-50%)}.cats{padding-top:6px!important;padding-bottom:6px!important;margin-top:4px!important;margin-bottom:-6px!important}.tray .days2{padding-top:7px!important;padding-bottom:7px!important;margin-top:3px!important;margin-bottom:5px!important}.tray .isets{padding-top:7px!important;padding-bottom:7px!important;margin-top:-7px!important;margin-bottom:-5px!important}.cats button::before{content:"";position:absolute;left:0;right:0;top:-6px;bottom:-6px}.tray .days2 button::before{content:"";position:absolute;left:0;right:0;top:-7px;bottom:-7px}#tdGo{display:inline-block;padding:12px 8px;margin:-12px -8px}</style><script>document.addEventListener("scroll",function(e){var t=e.target;if(t&&t.id==="shell"&&(t.scrollLeft||t.scrollTop)){t.scrollLeft=0;t.scrollTop=0}},true)</script>
+<style>/* 批章能藏（1017） */.no-seal #seal,.no-seal .pv-seal{display:none!important}.cfgsw{display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 2px;border:0;background:none;color:var(--ink2);font:inherit;font-size:13px;cursor:pointer}.cfgsw i{position:relative;flex:none;width:30px;height:18px;border-radius:9px;background:var(--line);transition:background .25s}.cfgsw i::after{content:"";position:absolute;left:2px;top:2px;width:14px;height:14px;border-radius:50%;background:var(--paper);box-shadow:0 1px 2px rgba(0,0,0,.2);transition:transform .3s var(--spring)}.cfgsw[aria-checked=true] i{background:var(--pen)}.cfgsw[aria-checked=true] i::after{transform:translateX(12px)}</style>
 </body>
 </html>
