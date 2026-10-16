@@ -10,7 +10,7 @@
 const BASE = (process.env.JOURNAL_URL || "http://localhost:8787").replace(/\/$/, "") + "/journal";
 const TOKEN = process.env.JOURNAL_TOKEN || "";
 const H = (x = {}) => Object.assign(TOKEN ? { Authorization: "Bearer " + TOKEN } : {}, x);
-const api = async (m, p, body) => { const r = await fetch(BASE + p, { method: m, headers: H(body ? { "Content-Type": "application/json" } : {}), body: body ? JSON.stringify(body) : undefined }); if (r.status === 404) return null; if (!r.ok) throw new Error(`${m} ${p} → ${r.status}`); return r.json(); };
+const api = async (m, p, body) => { const r = await fetch(BASE + p, { method: m, headers: H(body ? { "Content-Type": "application/json" } : {}), body: body ? JSON.stringify(body) : undefined }); if (r.status === 404) return null; if (!r.ok) throw new Error(`${m} ${p} → ${r.status} ${await r.text()}`); return r.json(); };   // 原话核对拒收时，原因和最像的原话都在 body 里，原样带给 agent
 const kv = { get: p => api("GET", "/kv/" + p), set: (p, d) => api("PUT", "/kv/" + p, d), list: c => api("GET", "/kv/" + c + "/") };
 const dayKey = d => { const m = String(d).match(/(\d{4})-(\d{1,2})-(\d{1,2})/); return m ? `${+m[2]}.${+m[3]}` : String(d); };
 

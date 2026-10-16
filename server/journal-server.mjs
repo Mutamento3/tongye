@@ -64,6 +64,45 @@ const TOOL_HOOKS = {
   async get_kaomoji(args) { const L = await readJSON(path.join(DATA, "sources", "kaomoji.json"), []); return { items: L.slice(0, args && args.limit || 60) }; }
 };
 
+/* ---------- 原话核对：写进页面的原话一个字不改 ----------
+   agent 写 day/<M.D> 时，chat[]、quote（或 text.quote）、正文里 <her>…</her> 包起来的，都得在那天的原话（CHAT_FILE）里
+   一字不差地找得到（不算空格和引号，可以只取一段）。找到的，时间改成原话的时间；找不到的整页拒收（422），
+   把最像的那句原话一起退回去，让 agent 照原文重抄。
+   为什么放在后端：光靠 agent 自己记着「别改字」靠不住。实际出过：原话是「堪培拉」，页上被重打成了「堤培拉」。 */
+const norm = s => String(s || "").replace(/[\s「」『』“”"']/g, "");
+const similar = (a, b) => { a = norm(a); b = norm(b); if (!a || !b) return 0; const A = new Set(a); let n = 0; for (const ch of new Set(b)) if (A.has(ch)) n++; return n / Math.max(A.size, 1); };
+async function checkWords(k, doc) {
+  if (!doc || typeof doc !== "object") return [];
+  const all = await readJSON(CHAT_FILE, {});
+  const [mo, da] = String(k).split(".").map(Number);
+  const keys = Object.keys(all).filter(x => +x.slice(5, 7) === mo && +x.slice(8, 10) === da).sort();
+  const today = new Date().toISOString().slice(0, 10);
+  const date = keys.filter(x => x <= today).pop() || keys.pop();
+  const orig = (date && all[date]) || [];
+  const pool = { her: orig.filter(o => o.w === "her"), me: orig.filter(o => o.w !== "her") };
+  const find = (t, whos) => { const n = norm(t); if (!n) return null; for (const w of whos) for (const o of pool[w]) if (norm(o.p).includes(n)) return o; return null; };
+  const near = (t, whos) => { let best = "", s = -1; for (const w of whos) for (const o of pool[w]) { const v = similar(t, o.p); if (v > s) { s = v; best = o.p; } } return String(best).slice(0, 200); };
+  const bad = [];
+  (doc.chat || []).forEach((x, i) => {
+    if (!x || !x.p) return;
+    const whos = x.w === "her" ? ["her"] : ["me"], o = find(x.p, whos);
+    if (!o) bad.push({ 哪里: `chat[${i}]`, 写的: String(x.p).slice(0, 200), 那天最像的原话: near(x.p, whos) });
+    else if (o.t) x.t = o.t;
+  });
+  for (const [where, q] of [["quote", doc.quote], ["text.quote", doc.text && doc.text.quote]]) {
+    if (!q || !q.p) continue;
+    const o = find(q.p, ["her", "me"]);
+    if (!o) bad.push({ 哪里: where, 写的: String(q.p).slice(0, 200), 那天最像的原话: near(q.p, ["her", "me"]) });
+    else if (o.t) q.t = o.t;
+  }
+  for (const [key, val] of Object.entries(doc.text || {})) {
+    const s = typeof val === "string" ? val : JSON.stringify(val);
+    for (const m of s.matchAll(/<her>(.+?)<\/her>/g))
+      if (!find(m[1], ["her"])) bad.push({ 哪里: `text.${key} 里的 <her>`, 写的: m[1].slice(0, 200), 那天最像的原话: near(m[1], ["her"]) });
+  }
+  return bad;
+}
+
 /* ---------- 给 agent 的原料 ---------- */
 async function sources(date) {
   const idx = await readJSON(PHOTO_INDEX, []);
@@ -125,7 +164,10 @@ http.createServer(async (req, res) => {
       }
       const f = kvFile(p);
       if (req.method === "GET") { const d = await readJSON(f); return d == null ? ok(res, 404, { error: "none" }) : ok(res, 200, d); }
-      if (req.method === "PUT") { const d = JSON.parse((await readBody(req)).toString("utf8") || "null"); await fs.mkdir(path.dirname(f), { recursive: true }); await fs.writeFile(f, JSON.stringify(d)); push(p, d); return ok(res, 200, { ok: 1 }); }
+      if (req.method === "PUT") { const d = JSON.parse((await readBody(req)).toString("utf8") || "null");
+        if (p.startsWith("day/")) { const bad = await checkWords(p.slice(4), d);   // 原话核对，见上面 checkWords
+          if (bad.length) return ok(res, 422, { error: "有几句不是那天的原话，这一页没写进去。原话一个字不改：照「那天最像的原话」原样抄（可以只取其中一段），对不上的就别放。改好再写一次。", 对不上的: bad }); }
+        await fs.mkdir(path.dirname(f), { recursive: true }); await fs.writeFile(f, JSON.stringify(d)); push(p, d); return ok(res, 200, { ok: 1 }); }
       if (req.method === "DELETE") { await fs.rm(f, { force: true }); push(p, null); return ok(res, 200, { ok: 1 }); }
     }
     if (rest === "assets" && req.method === "POST") return ok(res, 200, await saveAsset(await readBody(req), req.headers["content-type"] || ""));
