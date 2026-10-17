@@ -1994,8 +1994,8 @@ $("#rsz").addEventListener("pointerdown",e=>{const s=selStk;if(!s)return;e.preve
  const mv=ev=>{const w=Math.max(30,Math.min(380,w0+(ev.clientX-sx)/sc)),hh=Math.max(14,Math.min(600,h0+(ev.clientY-sy)/sc));s.style.setProperty("--w",w+"px");s.style.height=hh+"px";posRsz();(()=>{const b=$("#stkbar"),bw=b.offsetWidth||300;b.style.left=Math.max(bw/2+4,Math.min($("#page").clientWidth-bw/2-4,parseFloat(s.style.left)+w/2))+"px"})()};
  const up=()=>{dragging=false;h.removeEventListener("pointermove",mv);h.removeEventListener("pointerup",up);h.removeEventListener("pointercancel",up);buzz(5)};
  h.addEventListener("pointermove",mv);h.addEventListener("pointerup",up);h.addEventListener("pointercancel",up)});
-function select(s){selStk&&selStk.classList.remove("sel");selStk=s;const bar=$("#stkbar");bar.classList.remove("editing");if(!s){bar.classList.remove("on");posRsz();window.posRot&&posRot();return}
- const it=getItem(s.dataset.c,s.dataset.k);bar.classList.toggle("can-edit",!!it.edit);bar.classList.toggle("can-form",!!it.forms);bar.classList.toggle("can-rs",!!it.rs);
+function select(s){window.edOff&&edOff(s);selStk&&selStk.classList.remove("sel");selStk=s;const bar=$("#stkbar");bar.classList.remove("editing");if(!s){bar.classList.remove("on");posRsz();window.posRot&&posRot();return}
+ const it=getItem(s.dataset.c,s.dataset.k);bar.classList.toggle("can-edit",!!it.edit);bar.classList.toggle("can-form",!!it.forms);bar.classList.toggle("can-rs",!!it.rs);bar.classList.toggle("can-type",!!s.querySelector(".mt"));
  s.classList.add("sel");const pg=$("#page");pg.appendChild(bar);posRsz();const y=parseFloat(s.style.top)-48,x=parseFloat(s.style.left)+s.offsetWidth/2;
  bar.style.top=Math.max(4,y)+"px";bar.classList.add("on");const bw=bar.offsetWidth||300;bar.style.left=Math.max(bw/2+4,Math.min(pg.clientWidth-bw/2-4,x))+"px";window.posRot&&posRot();buzz(4)}
 $("#stkbar").addEventListener("pointerdown",e=>e.stopPropagation());
@@ -2366,7 +2366,7 @@ async function importPhotos(files){const L=[...files].filter(f=>/^image\//.test(
   MINE_STK.push(rec);if(mineCol&&rec.asset)try{await mineCol.doc(rec.id).set(rec)}catch(e){}
   const it=getItem("pic",rec.id);const [x,y]=viewSpot(it.w,i);last=place("pic",rec.id,x,y,"her",true,{r:(Math.random()*8-4)|0});i++}catch(e){console.error("importPhotos",e)}}
  saveMineLocal();savePage();if(last)setTimeout(()=>select(last),450);toast(`放了 ${i} 张${ASSETS?"":" · 只存在这台设备上"} · 拖右下角能改大小，「形」换相框`);buzz(10)}
-function addText(form=0){const [x,y]=viewSpot(210);const s=place("text","t"+Date.now().toString(36),x,y,"her",true,{r:0,st:form});
+function addText(form=0){const [x,y]=viewSpot(210);const s=place("text","t"+Date.now().toString(36),x,y,"her",true,{r:0,st:form});window.edOn&&edOn(s,true);
  setTimeout(()=>{const m=s.querySelector(".mt");if(m){m.focus();const sel=getSelection();sel.selectAllChildren(m);sel.collapseToEnd()}},260);toast("直接打字 · 点它再点「形」换字体");buzz(8)}
 (function(){const I={t:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 5V4h12v1M10 4v12M8 16h4"/></svg>',
  p:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><rect x="3" y="4" width="14" height="12" rx="2.5"/><circle cx="7.5" cy="8.5" r="1.4"/><path d="M3.5 14l4-3.5 3 2.5 2.5-2 3.5 3"/></svg>',
@@ -2825,16 +2825,18 @@ function center(s){var r=s.getBoundingClientRect();return {x:r.left+r.width/2,y:
 function moveBar(s){try{var b=document.getElementById("stkbar"),bw=b.offsetWidth||300,c=center(s),P=pg.getBoundingClientRect();
  b.style.left=Math.max(bw/2+4,Math.min(pg.clientWidth-bw/2-4,c.x-P.left))+"px"}catch(_){}}
 window.posRot=function(){var s=window.selStk||(typeof selStk!=="undefined"?selStk:null);if(!s){h.classList.remove("on");return}
- pg.appendChild(h);var c=center(s),P=pg.getBoundingClientRect(),sc=num(s,"--s",1),R=Math.max(s.offsetWidth,s.offsetHeight)*sc/2+24,
+ pg.appendChild(h);var c=center(s),P=pg.getBoundingClientRect(),sc=num(s,"--s",1),R=s.offsetHeight*sc/2+26,   /* 1018：贴着贴纸下边，宽字框不再把把手推到老远 */
+ 
  a=(num(s,"--r",0)+90)*Math.PI/180,x=c.x-P.left+R*Math.cos(a),y=c.y-P.top+R*Math.sin(a);
  h.style.left=Math.max(16,Math.min(pg.clientWidth-16,x))+"px";h.style.top=Math.max(16,Math.min(pg.clientHeight-16,y))+"px";h.classList.add("on")};
 h.addEventListener("pointerdown",function(e){var s=(typeof selStk!=="undefined")?selStk:null;if(!s)return;e.preventDefault();e.stopPropagation();
- try{dragging=true}catch(_){}try{h.setPointerCapture(e.pointerId)}catch(_){}var c=center(s),a0=Math.atan2(e.clientY-c.y,e.clientX-c.x),r0=num(s,"--r",0);s.classList.add("turning");
- function mv(ev){var d=r0+(Math.atan2(ev.clientY-c.y,ev.clientX-c.x)-a0)*180/Math.PI,sn=Math.round(d/45)*45;if(Math.abs(d-sn)<4)d=sn;
+ try{dragging=true}catch(_){}try{h.setPointerCapture(e.pointerId)}catch(_){}var c=center(s),a0=Math.atan2(e.clientY-c.y,e.clientX-c.x),r0=num(s,"--r",0);s.classList.add("turning");h.classList.add("drag");document.documentElement.classList.add("nosel");   /* 1018：拖把手时整页不许选字 */
+ function mv(ev){var d=r0+(Math.atan2(ev.clientY-c.y,ev.clientX-c.x)-a0)*180/Math.PI,sn=Math.round(d/45)*45;var snap=Math.abs(d-sn)<4;if(snap)d=sn;if(snap&&!h.classList.contains("snap")){try{buzz(6)}catch(_){}}h.classList.toggle("snap",snap);h.dataset.deg=(((Math.round(d)%360)+540)%360-180)+"°";
   s.style.setProperty("--r",d.toFixed(1)+"deg");posRot()}
- var done=false;function up(){if(done)return;done=true;try{dragging=false}catch(_){}s.classList.remove("turning");h.removeEventListener("pointermove",mv);h.removeEventListener("pointerup",up);h.removeEventListener("pointercancel",up);document.removeEventListener("pointerup",up,true);document.removeEventListener("pointercancel",up,true);
+ var done=false;function up(){if(done)return;done=true;try{dragging=false}catch(_){}s.classList.remove("turning");h.classList.remove("drag","snap");document.documentElement.classList.remove("nosel");h.removeEventListener("pointermove",mv);h.removeEventListener("pointerup",up);h.removeEventListener("pointercancel",up);document.removeEventListener("pointerup",up,true);document.removeEventListener("pointercancel",up,true);
   try{posRsz()}catch(_){}moveBar(s);try{savePage()}catch(_){}try{buzz(5)}catch(_){}}
  h.addEventListener("pointermove",mv);h.addEventListener("pointerup",up);h.addEventListener("pointercancel",up);document.addEventListener("pointerup",up,true);document.addEventListener("pointercancel",up,true)});
+h.addEventListener("touchstart",function(e){if(e.cancelable)e.preventDefault()},{passive:false});   /* 1018：iPhone 长按把手会去选旁边的字，这里拦掉 */
 var P=new Map(),g=null;
 pg.addEventListener("pointerdown",function(e){if(e.isPrimary){P.clear();P.sel=(typeof selStk!=="undefined"&&selStk)||null;if(g){g.s.classList.remove("turning");g=null;try{dragging=false}catch(_){}}window.__stk2=false}/* 1018：第一根手指按下就清掉旧记录，抬起漏收一次也不会一直当成两指 */if(e.pointerType!=="touch"||e.target.closest("#rotH,#rsz,#stkbar"))return;P.set(e.pointerId,{x:e.clientX,y:e.clientY,s:e.target.closest(".stk.placed")});
  if(P.size===2){var v=Array.from(P.values()),a=v[0],b=v[1],st=a.s||b.s||(P.sel&&P.sel.isConnected?P.sel:null);if(!st)return;   /* 小贴纸两指按不全：选中的那张，在旁边捏也算 */
@@ -2933,6 +2935,30 @@ el.addEventListener("pointerdown",function(e){var h=e.target.closest(".hang");if
   g.style.setProperty("--w",(it.wOf?it.wOf(it.def):it.w)+"px");g.innerHTML=it.make(it.def,0);document.body.appendChild(g);mv(last);
   removeEventListener("pointermove",early);addEventListener("pointermove",mv)},300);
  addEventListener("pointermove",early);addEventListener("pointerup",up);addEventListener("pointercancel",up)});
+})();</script>
+<style>/* 手势分清（1018） */.stk.placed{-webkit-touch-callout:none}.stk.placed:not(.editing) .mt{pointer-events:none;-webkit-user-select:none;user-select:none}.stk.placed.editing{outline:1.5px solid var(--pen);outline-offset:6px}.stk.placed.editing .mt{cursor:text;-webkit-user-select:text;user-select:text}.stkbar.can-type .edit-only{display:block;color:#C9E4D9}#stkbar .tools button{transition:transform .12s var(--ease),background-color .12s}#stkbar .tools button:active{transform:scale(.84);background-color:rgba(255,255,255,.18)}.addfab .main:active{transform:scale(.9)}.addfab.open .menu button:active{transform:scale(.94);background:color-mix(in srgb,var(--ink) 8%,var(--paper))}.roth{transition:transform .18s var(--spring),box-shadow .18s,background-color .18s}.roth:active,.roth.drag{transform:scale(1.16);box-shadow:0 0 0 3px var(--paper),0 0 0 7px color-mix(in srgb,var(--pen) 40%,transparent),var(--lift)}.roth.snap{background:var(--pen)}.roth.drag::after{content:attr(data-deg);position:absolute;left:50%;bottom:calc(100% + 10px);transform:translateX(-50%);padding:3px 8px;border-radius:10px;background:var(--ink);color:var(--paper);font:600 11px/1.2 var(--mono);white-space:nowrap;pointer-events:none}.stk.placed.grab{filter:drop-shadow(1.6px 0 0 var(--paper)) drop-shadow(-1.6px 0 0 var(--paper)) drop-shadow(0 1.6px 0 var(--paper)) drop-shadow(0 -1.6px 0 var(--paper)) drop-shadow(0 12px 16px rgba(0,0,0,.3))}html.nosel,html.nosel *{-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important}</style><script>/* 手势分清（1018） */(function(){
+document.addEventListener("touchstart",function(){},{passive:true});   /* iPhone 上 :active 要有这一句才亮 */
+var ED=null;
+function caretEnd(m){try{var r=document.createRange();r.selectNodeContents(m);r.collapse(false);var sl=getSelection();sl.removeAllRanges();sl.addRange(r)}catch(e){}}
+window.edOn=function(s,noFocus){if(!s||!s.querySelector(".mt"))return;if(ED&&ED!==s)edOff();ED=s;s.classList.add("editing");
+ try{if(selStk!==s)select(s)}catch(e){}
+ if(!noFocus){var m=s.querySelector(".mt");try{m.focus();caretEnd(m)}catch(e){}}
+ try{toast("可以改字了 · 点空白处收起")}catch(e){}};
+window.edOff=function(keep){if(!ED||ED===keep)return;var s=ED;ED=null;s.classList.remove("editing");var a=document.activeElement;if(a&&s.contains(a))try{a.blur()}catch(e){}try{savePage()}catch(e){}};
+/* 一获得焦点就算在打字（新打的字、新贴的便签会自己聚焦） */
+document.addEventListener("focusin",function(e){var m=e.target.closest&&e.target.closest("#page .stk.placed .mt");if(!m)return;var s=m.closest(".stk.placed");if(ED!==s){if(ED)edOff();ED=s;s.classList.add("editing")}});
+document.addEventListener("focusout",function(){var s=ED;if(!s)return;setTimeout(function(){if(ED===s&&!s.contains(document.activeElement))edOff()},250)});
+/* 点空白处退出打字 */
+document.addEventListener("pointerdown",function(e){if(ED&&!e.target.closest(".stk.editing")&&!e.target.closest("#stkbar"))edOff()},true);
+/* 双击进打字：按下记一笔，松手（等贴纸自己的处理走完）再判断 */
+var dn=null,last=null;
+document.addEventListener("pointerdown",function(e){var s=e.target.closest&&e.target.closest("#page .stk.placed");dn=s&&s.querySelector(".mt")&&s!==ED?{s:s,x:e.clientX,y:e.clientY,t:Date.now()}:null},true);
+addEventListener("pointerup",function(e){if(!dn)return;var d=dn;dn=null;if(Math.hypot(e.clientX-d.x,e.clientY-d.y)>8||Date.now()-d.t>350){last=null;return}
+ var now=Date.now();if(last&&last.s===d.s&&now-last.t<420){last=null;edOn(d.s)}else last={s:d.s,t:now}});
+/* 工具条「字」：打的字、便签按它也进打字 */
+var bar=document.getElementById("stkbar");
+bar&&bar.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest('[data-a="txt"]');if(!b)return;var s=null;try{s=selStk}catch(_){}if(!s||!s.querySelector(".mt"))return;
+ var it=null;try{it=getItem(s.dataset.c,s.dataset.k)}catch(_){}if(it&&it.edit)return;e.stopPropagation();e.preventDefault();edOn(s)},true);
 })();</script>
 </body>
 </html>
