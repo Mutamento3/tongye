@@ -1993,7 +1993,7 @@ function dragNew(e,c,k){if(e.button>0)return;
  e.preventDefault();startDrag(e,c,k)}
 function startDrag(e,c,k){dragging=true;buzz(8);const it=getItem(c,k);const g=document.createElement("div");g.className="stk ghost c-"+c+(it.html?" html":"");g.style.setProperty("--w",it.w+"px");g.innerHTML=it.make();document.body.appendChild(g);
  const mv=ev=>{g.style.left=ev.clientX+"px";g.style.top=ev.clientY+"px"};mv(e);
- const up=ev=>{dragging=false;removeEventListener("pointermove",mv);removeEventListener("pointerup",up);removeEventListener("pointercancel",up);const r=$("#page").getBoundingClientRect();
+ const up=ev=>{dragging=false;removeEventListener("pointermove",mv);removeEventListener("pointerup",up);removeEventListener("pointercancel",up);if(window.lineCatch&&lineCatch(ev,c,k,g))return;const r=$("#page").getBoundingClientRect();
   if(ev.clientX>r.left&&ev.clientX<r.right&&ev.clientY>r.top&&ev.clientY<r.bottom){const s=place(c,k,ev.clientX-r.left-it.w/2,ev.clientY-r.top-20,it.who||"her",true);bump(c,k);g.remove();buzz(12);toast(it.edit?"贴上了 · 点它 →「字」能改字":"贴上了 · 点它能转、放大、撕掉");if(it.html)setTimeout(()=>{const m=s.querySelector(".mt");m&&m.focus()},300)}
   else{g.style.transition="opacity .25s,transform .3s";g.style.opacity=0;g.style.transform+=" scale(.5)";setTimeout(()=>g.remove(),300)}};
  addEventListener("pointermove",mv);addEventListener("pointerup",up);addEventListener("pointercancel",up)}
@@ -2384,10 +2384,10 @@ function addText(form=0){const [x,y]=viewSpot(210);const s=place("text","t"+Date
  p:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><rect x="3" y="4" width="14" height="12" rx="2.5"/><circle cx="7.5" cy="8.5" r="1.4"/><path d="M3.5 14l4-3.5 3 2.5 2.5-2 3.5 3"/></svg>',
  s:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M4 4h12v7l-5 5H4z"/><path d="M11 16v-5h5"/></svg>'};
  const f=document.createElement("div");f.className="addfab";f.id="addFab";
- f.innerHTML=`<div class="menu"><button class="tap" data-add="text">${I.t}<span>打字</span></button><button class="tap" data-add="pic">${I.p}<span>放照片</span></button><button class="tap" data-add="stk">${I.s}<span>贴纸</span></button></div><button class="main tap" aria-label="往这页加东西" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button><input type="file" accept="image/*" multiple hidden>`;
+ f.innerHTML=`<div class="menu"><button class="tap" data-add="text">${I.t}<span>打字</span></button><button class="tap" data-add="pic">${I.p}<span>放照片</span></button><button class="tap" data-add="stk">${I.s}<span>贴纸</span></button><button class="tap" data-add="line"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5q8 4 16 0"/><path d="M7 7v2"/><rect x="4.5" y="9" width="5" height="6" rx="1"/><path d="M13 6.6v2"/><rect x="11" y="8.6" width="4" height="4.4" rx="1"/></svg><span>贴纸悬挂</span></button></div><button class="main tap" aria-label="往这页加东西" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button><input type="file" accept="image/*" multiple hidden>`;
  document.body.appendChild(f);const inp=f.querySelector("input"),main=f.querySelector(".main");const tog=o=>{f.classList.toggle("open",o);main.setAttribute("aria-expanded",o)};
  main.onclick=e=>{e.stopPropagation();tog(!f.classList.contains("open"));buzz(5)};
- f.querySelectorAll("[data-add]").forEach(b=>b.onclick=e=>{e.stopPropagation();tog(false);const a=b.dataset.add;if(a==="text")addText();else if(a==="pic")inp.click();else{$("#tray").scrollIntoView({behavior:"smooth",block:"start"})}});
+ f.querySelectorAll("[data-add]").forEach(b=>b.onclick=e=>{e.stopPropagation();tog(false);const a=b.dataset.add;if(a==="text")addText();else if(a==="pic")inp.click();else if(a==="line"&&window.lineShow)lineShow();else{$("#tray").scrollIntoView({behavior:"smooth",block:"start"})}});
  inp.onchange=()=>{if(inp.files&&inp.files.length)importPhotos(inp.files);inp.value=""};
  document.addEventListener("pointerdown",e=>{if(!e.target.closest("#addFab"))tog(false)})})();
 /* 点一下的反馈 */
@@ -2945,5 +2945,53 @@ window.qFullDay=function(k){if(!k||QF_DONE.has(k))return;QF_DONE.add(k);try{QX_A
    if(C.length>=((CHATLOG[k]||[]).length))CHATLOG[k]=C}catch(e){}
   try{if(Array.isArray(s.book)&&s.book.length)BOOKLOG[k]=s.book;if(Array.isArray(s.health)&&s.health.length)HEALTHLOG[k]=s.health}catch(e){}}cb()}).catch(cb)};
 </script>
+<style>/* 贴纸悬挂（1018） */#hline{position:fixed;left:0;right:0;top:var(--lt,64px);height:120px;z-index:65;pointer-events:none;opacity:0;visibility:hidden;transform:translateY(-26px);transition:opacity .25s,transform .5s var(--spring),visibility 0s .5s}#hline.on{opacity:1;visibility:visible;transform:none;transition:opacity .25s,transform .5s var(--spring)}#hline .cord{position:absolute;left:0;top:0;width:100%;height:44px;overflow:visible;filter:drop-shadow(0 1px 0 var(--paper)) drop-shadow(0 -1px 0 var(--paper))}#hline .cord path{fill:none;stroke:var(--ink);stroke-width:1.3;stroke-linecap:round;opacity:.7;transition:stroke .2s,stroke-width .2s,opacity .2s}#hline.catch .cord path{stroke:var(--pen);stroke-width:2.2;opacity:1}#hline .knot{position:absolute;top:6px;width:9px;height:9px;margin-left:-4.5px;border-radius:50%;background:var(--paper);box-shadow:0 0 0 1.5px var(--ink)}#hline .hang{position:absolute;top:0;margin-left:calc(var(--tw) / -2);width:var(--tw);pointer-events:auto;touch-action:none;-webkit-user-select:none;user-select:none;transform-origin:50% 0;transition:opacity .2s,transform .3s var(--spring)}#hline .hang .pin{display:block;width:12px;height:20px;margin:0 auto -6px;position:relative;z-index:2}#hline .hang .th{display:block;filter:drop-shadow(0 3px 4px rgba(0,0,0,.18));pointer-events:none}#hline .hang .th .stk{position:relative;left:0;top:0;transform:none;filter:none;cursor:inherit}#hline .hang.swing{animation:hswing 1.5s var(--ease) both}#hline .hang.lift{transform:translateY(6px) scale(1.12)}#hline .hang.away{opacity:.18}#hline .tip{position:absolute;left:50%;top:30px;transform:translateX(-50%);pointer-events:auto;font-size:12px;color:var(--ink2);background:var(--paper);border:1px dashed var(--line);border-radius:15px;padding:6px 13px;white-space:nowrap;box-shadow:0 6px 14px -10px rgba(0,0,0,.35)}@keyframes hswing{0%{transform:rotate(16deg)}22%{transform:rotate(-11deg)}42%{transform:rotate(6deg)}62%{transform:rotate(-3deg)}82%{transform:rotate(1deg)}100%{transform:rotate(0)}}@media (prefers-reduced-motion:reduce){#hline .hang.swing{animation:none}}.addfab.lineon .main svg{transform:rotate(45deg)}html:has(#shell:not(.off)) #hline,body:has(.sheet.on) #hline,body:has(#scrim.on) #hline,.shooting #hline{display:none}</style><script>/* 贴纸悬挂（1018） */(function(){
+var LK="journalLine",MAX=10,on=false,L=[];try{L=JSON.parse(localStorage.getItem(LK)||"[]").filter(function(x){return x&&x.c&&x.k!=null})}catch(e){L=[]}
+var el=document.createElement("div");el.id="hline";el.setAttribute("aria-label","贴纸悬挂");document.body.appendChild(el);
+var PIN='<svg class="pin" viewBox="0 0 12 20"><rect x="1.5" y="1" width="4" height="18" rx="1.6" fill="#d9bb8f" stroke="currentColor" stroke-width=".7"/><rect x="6.5" y="1" width="4" height="18" rx="1.6" fill="#cfae80" stroke="currentColor" stroke-width=".7"/><rect x="1" y="8" width="10" height="3" rx="1" fill="#9aa3a8"/></svg>';
+function save(){try{localStorage.setItem(LK,JSON.stringify(L))}catch(e){}}
+function top(){var h=document.querySelector("#app > header.top")||document.querySelector("header.top");var b=h?h.getBoundingClientRect().bottom:0;return Math.max(0,Math.round(b))}
+function cy(x,W){var t=Math.max(0,Math.min(1,x/W));return 10+48*t*(1-t)}
+function band(y){var t=top();return y>=t-6&&y<=t+78}
+function thumb(x){var it;try{it=getItem(x.c,x.k)}catch(e){it=null}if(!it)return null;var w=it.wOf?it.wOf(it.def):it.w,tw=Math.max(34,Math.min(58,w*.62));
+ return {it:it,w:w,tw:tw,html:'<span class="th" style="width:'+tw+'px"><span style="display:block;width:'+w+'px;zoom:'+(tw/w).toFixed(3)+'"><span class="stk c-'+x.c+(it.html?' html':'')+'" style="--w:'+w+'px;position:relative">'+it.make(it.def,0)+'</span></span></span>'}}
+function render(fresh){var W=el.clientWidth||innerWidth;var n=L.length;
+ el.innerHTML='<svg class="cord" viewBox="0 0 '+W+' 44" preserveAspectRatio="none"><path d="M0 10 Q'+(W/2)+' 58 '+W+' 10"/></svg><span class="knot" style="left:6px"></span><span class="knot" style="left:'+(W-6)+'px"></span>'
+  +(n?'':'<button class="tip tap" type="button">从下面贴纸栏按住，拖到这根线上</button>');
+ L.forEach(function(x,i){var T=thumb(x);if(!T)return;var px=W*(i+1)/(n+1);var h=document.createElement("div");h.className="hang"+(fresh===i?" swing":"");h.dataset.i=i;
+  h.style.setProperty("--tw",T.tw+"px");h.style.left=px+"px";h.style.top=(cy(px,W)-9)+"px";h.innerHTML=PIN+T.html;el.appendChild(h)});
+ var tp=el.querySelector(".tip");if(tp)tp.onclick=function(){var t=document.getElementById("tray");t&&t.scrollIntoView({behavior:"smooth",block:"start"})}}
+function fab(){var f=document.getElementById("addFab");f&&f.classList.toggle("lineon",on)}
+window.lineShow=function(){on=true;el.style.setProperty("--lt",top()+"px");render();el.classList.add("on");fab();try{buzz(6)}catch(e){}
+ if(!L.length){var t=document.getElementById("tray");t&&t.scrollIntoView({behavior:"smooth",block:"start"})}};
+window.lineHide=function(){on=false;el.classList.remove("on","catch");fab()};
+addEventListener("resize",function(){if(on){el.style.setProperty("--lt",top()+"px");render()}});
+/* 再点一下加号：线收起来，不开菜单 */
+document.addEventListener("click",function(e){if(!on)return;var m=e.target.closest&&e.target.closest("#addFab .main");if(!m)return;e.stopPropagation();e.preventDefault();lineHide();try{buzz(5)}catch(_){}},true);
+/* 从贴纸栏拖过来：拖到线那一带就亮一下，松手挂上 */
+addEventListener("pointermove",function(e){if(!on)return;var g=document.querySelector(".stk.ghost");el.classList.toggle("catch",!!(g&&band(e.clientY)))},{passive:true});
+window.lineCatch=function(ev,c,k,g){if(!on||!band(ev.clientY))return false;el.classList.remove("catch");
+ if(L.length>=MAX){try{toast("线上挂满了，先取下来几张")}catch(e){}return false}
+ L.push({c:c,k:k,at:Date.now()});save();render(L.length-1);g.remove();try{buzz(12)}catch(e){}
+ try{toast(L.length===1?"挂上了 · 滑到想贴的地方，按住它取下来":"挂上了")}catch(e){}return true};
+/* 从线上取下来：按住 0.3 秒提起来，拖到纸上松手就贴在那儿 */
+el.addEventListener("pointerdown",function(e){var h=e.target.closest(".hang");if(!h||e.button>0)return;var i=+h.dataset.i,x=L[i];if(!x)return;
+ var sx=e.clientX,sy=e.clientY,last=e,lifted=false,g=null,it=null;h.classList.add("lift");
+ function early(ev){last=ev;if(!lifted&&Math.hypot(ev.clientX-sx,ev.clientY-sy)>10)cancel()}
+ function cancel(){clearTimeout(tm);h.classList.remove("lift");off()}
+ function off(){removeEventListener("pointermove",early);removeEventListener("pointermove",mv);removeEventListener("pointerup",up);removeEventListener("pointercancel",up)}
+ function mv(ev){if(g){g.style.left=ev.clientX+"px";g.style.top=ev.clientY+"px"}}
+ function up(ev){off();clearTimeout(tm);h.classList.remove("lift","away");if(!lifted){try{toast("按住一下就能取下来")}catch(_){}return}
+  try{dragging=false}catch(_){}var pg=document.getElementById("page"),r=pg.getBoundingClientRect();
+  if(!band(ev.clientY)&&ev.clientX>r.left&&ev.clientX<r.right&&ev.clientY>r.top&&ev.clientY<r.bottom){
+   try{place(x.c,x.k,ev.clientX-r.left-it.w/2,ev.clientY-r.top-20,it.who||"her",true);bump(x.c,x.k)}catch(_){}
+   L.splice(i,1);save();render();g.remove();try{buzz(12);toast("取下来了 · 点它能转、放大、撕掉")}catch(_){}}
+  else{g.style.transition="opacity .25s,transform .3s";g.style.opacity=0;g.style.transform+=" scale(.5)";setTimeout(function(){g.remove()},300)}}
+ var tm=setTimeout(function(){lifted=true;try{it=getItem(x.c,x.k)}catch(_){it=null}if(!it){cancel();return}
+  try{dragging=true;buzz(8)}catch(_){}h.classList.add("away");g=document.createElement("div");g.className="stk ghost c-"+x.c+(it.html?" html":"");
+  g.style.setProperty("--w",(it.wOf?it.wOf(it.def):it.w)+"px");g.innerHTML=it.make(it.def,0);document.body.appendChild(g);mv(last);
+  removeEventListener("pointermove",early);addEventListener("pointermove",mv)},300);
+ addEventListener("pointermove",early);addEventListener("pointerup",up);addEventListener("pointercancel",up)});
+})();</script>
 </body>
 </html>
