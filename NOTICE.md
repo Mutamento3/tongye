@@ -7,6 +7,7 @@
 | 贴纸 · 表情贴 | [Fluent Emoji](https://github.com/microsoft/fluentui-emoji) | Microsoft | MIT |
 | 贴纸 · 图标库 | [Phosphor Icons](https://github.com/phosphor-icons/core) | Phosphor Icons | MIT |
 | 贴纸 · 胶带花色 | [Hero Patterns](https://heropatterns.com) | Steve Schoger | CC BY 4.0 |
+| 贴纸 · 胶带花色 | [pattern.monster](https://pattern.monster) | pattern.monster | MIT；颜色和深浅改成跟着贴纸走 |
 | 贴纸 · 手绘、涂鸦 | [dddoodle](https://fffuel.co/dddoodle/) | Seb（fffuel.co） | CC BY 4.0；去掉了模糊滤镜、坐标取整、颜色改成跟着风格走 |
 | 贴纸 · 拼贴 | 博物馆开放馆藏的扫描：[The Met](https://www.metmuseum.org/about-the-met/policies-and-documents/open-access)、[Cleveland Museum of Art](https://www.clevelandart.org/open-access)、[Wellcome Collection](https://wellcomecollection.org) | 各馆 | CC0 / 公有领域；每一张的出处和链接写在页面的 `CLIP.meta` 里 |
 | 存长图 | [html-to-image](https://github.com/bubkoo/html-to-image) | W.Y.（bubkoo） | MIT |
@@ -16,7 +17,7 @@
 
 **没有带的**：[Clawd on Desk](https://github.com/rullerzhou-afk/clawd-on-desk) 的螃蟹、三花猫、云宝动图。那个项目的代码是 AGPL-3.0，美术保留所有权利、不在开源范围内（Clawd 形象归 Anthropic），所以这里不再分发。想在自己的本子里用，请去它那里看许可、问作者。
 
-## MIT 许可原文（Fluent Emoji、Phosphor Icons、html-to-image）
+## MIT 许可原文（Fluent Emoji、Phosphor Icons、pattern.monster、html-to-image）
 
 ```
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -38,4 +39,4 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-Copyright notices: Fluent Emoji — Copyright (c) Microsoft Corporation. Phosphor Icons — Copyright (c) 2023 Phosphor Icons. html-to-image — Copyright (c) 2017-2026 W.Y. Hero Patterns by Steve Schoger, licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). dddoodle by Seb (fffuel.co), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); filters removed, coordinates rounded, recolored to follow the page style.
+Copyright notices: Fluent Emoji — Copyright (c) Microsoft Corporation. Phosphor Icons — Copyright (c) 2023 Phosphor Icons. pattern.monster — Copyright (c) 2020 - 2023 pattern.monster. html-to-image — Copyright (c) 2017-2026 W.Y. Hero Patterns by Steve Schoger, licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). dddoodle by Seb (fffuel.co), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); filters removed, coordinates rounded, recolored to follow the page style.

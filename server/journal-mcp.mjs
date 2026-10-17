@@ -15,7 +15,7 @@ const kv = { get: p => api("GET", "/kv/" + p), set: (p, d) => api("PUT", "/kv/" 
 const dayKey = d => { const m = String(d).match(/(\d{4})-(\d{1,2})-(\d{1,2})/); return m ? `${+m[2]}.${+m[3]}` : String(d); };
 
 const TOOLS = [
-  { name: "journal_sources", description: "读某一天做手帐的原料：那天相册里每张照片的时间、经纬度、光圈快门 ISO 焦距（不含图本身），聊天原话，吃了吗，天气。先调这个再决定用哪几张。",
+  { name: "journal_sources", description: "读某一天做手帐的原料：那天相册里每张照片的时间、经纬度、光圈快门 ISO 焦距（不含图本身），聊天原话，吃了吗，天气，还有那天的书摘（book）和身体数据（health），有就给。先调这个再决定用哪几张。",
     inputSchema: { type: "object", properties: { date: { type: "string", description: "YYYY-MM-DD" } }, required: ["date"] },
     run: a => api("GET", "/sources/" + a.date) },
   { name: "journal_publish_photo", description: "把相册里的一张照片放进本子（传成图片资源），返回 {url}。写 day 的 photos[].src 就用这个 url。只放要用的几张。",
@@ -26,7 +26,7 @@ const TOOLS = [
     run: async a => { const k = dayKey(a.date); const cur = (await kv.get("day/" + k)) || { day: k, status: "making", steps: [] };
       if (cur.status !== "making") { cur.status = "making"; cur.steps = []; }
       cur.steps = (cur.steps || []).map(s => ({ ...s, ok: true })).concat({ a: a.step, b: a.detail || "", ok: false }); if (a.title) cur.title = a.title; cur.ts = Date.now(); await kv.set("day/" + k, cur); return { ok: 1 }; } },
-  { name: "journal_write_day", description: "把一天写成一页（day/<M.D>）。只给原料，路线、快门条、坐标、邮戳、哪些零件藏起来，页面自己算。字段见 BACKEND.md「day/<日期>」。写完 status 自动是 done，她手机上会亮「做好了」。",
+  { name: "journal_write_day", description: "把一天写成一页（day/<M.D>）。只给原料，路线、快门条、坐标、邮戳、哪些零件藏起来，页面自己算。字段见 BACKEND.md「day/<日期>」；书摘、健康放 book / health，从原料原样挑，写的时候会核对。写完 status 自动是 done，她手机上会亮「做好了」。",
     inputSchema: { type: "object", properties: { date: { type: "string" }, page: { type: "object", description: "title, at, en, region, layout, style, text{p1,p2,cap,ann,pen{text,margin},quote{p,t}}, wx, photos[{src,t,lat,lon,f,shutter,iso,focal,note,role}], geo, shots, places[{n,lat,lon}], chat[{w,t,p}], food{meal,at,t,items,q}" } }, required: ["date", "page"] },
     run: async a => { const k = dayKey(a.date); const cur = (await kv.get("day/" + k)) || {}; const steps = (cur.steps || []).map(s => ({ ...s, ok: true }));
       const doc = { ...a.page, day: k, status: "done", by: a.page.by || "me", steps, ts: Date.now() }; await kv.set("day/" + k, doc); return { ok: 1, day: k }; } },

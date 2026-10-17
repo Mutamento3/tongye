@@ -10,12 +10,13 @@
 4. **挑话**：从 `chat` 里找**拍照时间前后**、跟照片里东西有关的句子。**只用原话，一个字不改**；找不到就不放，不要编一句像原话的话。
 5. **写字**：标题、正文 `p1`、主照片说明 `cap`，可选 `p2`、`ann`、红笔 `pen`（`[[要划线的字]]` + 页边一句 `margin`）。用你的口气写给她看，短一点。
 6. **地名**：给 `places` 起名（动物园、德国村），页面会把照片位置聚成站、配上名字。**照片没有 GPS 就不给 geo**，页面会自己把路线藏起来；不要猜坐标。
-7. **版式和风格**：页面里 `window.journalKit` 列着全部版式和风格，两根轴分开选。不确定就不写，页面按照片数量自己挑。
-8. **放照片**：`journal_publish_photo(id)` 只放要用的几张，拿到 url 填进 `photos[].src`。
-9. **写回**：`journal_write_day(date, page)`。`geo` 和 `shots` 给那天**所有**照片的（路线和快门条才完整），`photos` 只放用到的。
-10. **留一句**（可选）：在你最想说点什么的那块旁边留批注：`notes/<id> = {day, who:"me", text, at, re:null, b:零件id, fx, fy}`。
+7. **书摘和健康**（可选）：原料里有 `book` / `health` 的，挑一两条书摘、几项身体数据写进 `page.book` / `page.health`，原样拿（书摘的 `quote` 可以只取一段，`note` 可以不带）。跟这天没关系的别硬放。
+8. **版式和风格**：页面里 `window.journalKit` 列着全部版式和风格，两根轴分开选。不确定就不写，页面按照片数量自己挑。
+9. **放照片**：`journal_publish_photo(id)` 只放要用的几张，拿到 url 填进 `photos[].src`。
+10. **写回**：`journal_write_day(date, page)`。`geo` 和 `shots` 给那天**所有**照片的（路线和快门条才完整），`photos` 只放用到的。
+11. **留一句**（可选）：在你最想说点什么的那块旁边留批注：`notes/<id> = {day, who:"me", text, at, re:null, b:零件id, fx, fy}`。
     零件 id：sp 书脊、ti 标题、wx 天气、p1 正文、he 主照片、ro 路线、sh 截图、p2 截图说明、qu 引言、pa 双联照、an 照片批注、pe 红笔、su 快门条、tk 小票、en 邮戳。
-11. 她是在本子里点「交给枫」来的话，`journal_asks()` 里有那张请求，做完用 `done_id` 关掉。
+12. 她是在本子里点「交给枫」来的话，`journal_asks()` 里有那张请求，做完用 `done_id` 关掉。
 
 ## 她改过之后
 - `journal_read_page(date)`：她贴了什么、**自己打了什么字**（`stk` 里 `c:"text"` 的 `m`）、放了哪些照片（`c:"pic"`）、藏了哪些零件（`hide`）、留了什么批注。

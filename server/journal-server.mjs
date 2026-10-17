@@ -9,7 +9,7 @@
  *   2. 存图（assets）：/journal/assets
  *   3. 推变化（SSE）：/journal/events，两个人、手机和 agent 改了都会推
  *   4. 页面要调的工具：/journal/tool/sync_talk、/journal/tool/get_kaomoji（转给你的 App，见 TOOL_HOOKS）
- *   5. 给 agent 读原料：/journal/sources/<YYYY-MM-DD>（照片 EXIF + 聊天 + 吃了吗 + 天气）
+ *   5. 给 agent 读原料：/journal/sources/<YYYY-MM-DD>（照片 EXIF + 聊天 + 吃了吗 + 天气 + 书摘 + 健康）
  *      和 /journal/photos/<id>/publish（把相册里的一张图放进本子，返回 url）
  *
  * 你已经有自己的数据库和相册的话：保持这些路径和返回格式不变，把 sources / publish / TOOL_HOOKS 里读文件的地方换成你自己的就行。
@@ -31,6 +31,8 @@ const PHOTO_INDEX = process.env.PHOTO_INDEX || path.join(DATA, "sources", "photo
 const PHOTO_DIR = process.env.PHOTO_DIR || path.join(DATA, "sources", "photos");           // jpg 所在目录（jpg 字段相对它）
 const CHAT_FILE = process.env.CHAT_FILE || path.join(DATA, "sources", "chat.json");        // {"2026-09-27":[{w:"her",t:"09:46",p:"原话"}]}
 const FOOD_FILE = process.env.FOOD_FILE || path.join(DATA, "sources", "food.json");        // 吃了吗的导出：{"2026-09-27":[{slot,shop,place,time,dishes:[{name,verdict,note}],note}]}
+const BOOK_FILE = process.env.BOOK_FILE || path.join(DATA, "sources", "book.json");        // 书摘：{"2026-09-27":[{book,author,ch,quote,note,who,t}]}
+const HEALTH_FILE = process.env.HEALTH_FILE || path.join(DATA, "sources", "health.json");  // 健康：{"2026-09-27":[{k,n,v,s}]}，心情经期这类私密的别放
 const TALK_LOG = path.join(DATA, "talk.jsonl");
 
 const ok = (res, code, body, type = "application/json; charset=utf-8") => {
@@ -100,6 +102,13 @@ async function checkWords(k, doc) {
     for (const m of s.matchAll(/<her>(.+?)<\/her>/g))
       if (!find(m[1], ["her"])) bad.push({ 哪里: `text.${key} 里的 <her>`, 写的: m[1].slice(0, 200), 那天最像的原话: near(m[1], ["her"]) });
   }
+  // 书摘、健康也照原样：书摘的原文要在那天的 BOOK_FILE 里找得到（可以只取一段），健康要跟那天 HEALTH_FILE 记的一样
+  const pick = async file => { const A = await readJSON(file, {}); const ks = Object.keys(A).filter(x => +x.slice(5, 7) === mo && +x.slice(8, 10) === da).sort();
+    const d = ks.filter(x => x <= today).pop() || ks.pop(); return (d && A[d]) || []; };
+  if ((doc.book || []).length) { const L = await pick(BOOK_FILE);
+    doc.book.forEach((x, i) => { if (x && x.quote && !L.some(o => norm(o.quote).includes(norm(x.quote)))) bad.push({ 哪里: `book[${i}].quote`, 写的: String(x.quote).slice(0, 200), 那天的书摘: L.map(o => String(o.quote).slice(0, 80)).slice(0, 8) }); }); }
+  if ((doc.health || []).length) { const L = await pick(HEALTH_FILE);
+    doc.health.forEach((x, i) => { const o = x && L.find(h => h.k === x.k); if (x && (!o || String(o.s) !== String(x.s))) bad.push({ 哪里: `health[${i}]`, 写的: x, 那天记的: o || null }); }); }
   return bad;
 }
 
@@ -116,7 +125,8 @@ async function sources(date) {
     const d = await (await fetch(u)).json(); const D = d.daily;
     wx = { code: D.weather_code[0], hi: D.temperature_2m_max[0], lo: D.temperature_2m_min[0], mm: D.precipitation_sum[0], wind: D.wind_speed_10m_max[0], src: "open-meteo" };
   } catch {}
-  return { date, day: `${+date.slice(5, 7)}.${+date.slice(8, 10)}`, photos, geo: photos.filter(p => p.lat != null).map(p => [p.t, p.lat, p.lon, p.id]), shots: photos.map(p => p.t), chat, food, wx };
+  return { date, day: `${+date.slice(5, 7)}.${+date.slice(8, 10)}`, photos, geo: photos.filter(p => p.lat != null).map(p => [p.t, p.lat, p.lon, p.id]), shots: photos.map(p => p.t), chat, food, wx,
+    book: ((await readJSON(BOOK_FILE, {}))[date]) || [], health: ((await readJSON(HEALTH_FILE, {}))[date]) || [] };
 }
 async function publishPhoto(id) {
   const idx = await readJSON(PHOTO_INDEX, []);
