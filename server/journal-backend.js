@@ -7,7 +7,7 @@
  *   1) 页面 URL 带 ?api=https://你的服务器/journal&token=xxx
  *   2) <meta name="journal-api" content="https://你的服务器/journal"> 和 <meta name="journal-token" content="xxx">
  *   3) WebView 注入：window.JOURNAL_API="…"; window.JOURNAL_TOKEN="…"
- * 或者 App 直接注入 window.journalBackend = { get, set, del, list, upload, callTool, watch? }（见 BACKEND.md）
+ * 或者 App 直接注入 window.journalBackend = { get, set, del, list, upload, callTool, sources?, watch? }（见 BACKEND.md）
  */
 (function(){
   if (window.claude && !window.journalBackend) return;            // claude.ai 里：用原生运行时
@@ -31,6 +31,7 @@
       list: col => fetch(`${api}/kv/${enc(col)}/`, { headers: H() }).then(j).then(x => x || []),
       upload: async blob => fetch(`${api}/assets`, { method: "POST", headers: H({ "Content-Type": blob.type || "application/octet-stream" }), body: blob }).then(j),
       removeAsset: id => fetch(`${api}/assets/${encodeURIComponent(id)}`, { method: "DELETE", headers: H() }).then(j),
+      sources: date => fetch(`${api}/sources/${date}?full=1`, { headers: H() }).then(j),   // 引用栏要整天的原话、书摘、健康
       callTool: (tool, args, server) => fetch(`${api}/tool/${encodeURIComponent(tool)}`, { method: "POST", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ server, args }) }).then(j),
       watch: cb => {                                                // 服务器推：SSE，每条 {path, data|null}
         try { const es = new EventSource(`${api}/events${token ? "?token=" + encodeURIComponent(token) : ""}`);

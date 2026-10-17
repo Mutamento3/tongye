@@ -28,6 +28,8 @@ JOURNAL_TOKEN=换成一串随机字 node journal-server.mjs
 
 页面判断后端的顺序：`window.journalBackend`（App 直接注入对象）→ `window.JOURNAL_API` → 网址里的 `?api=` → `<meta name="journal-api">`。都没有就存本地。
 
+页面也会读那天的原料：贴纸栏「引用」翻到哪一天，就调一次 `GET /sources/<YYYY-MM-DD>`（跟第二节给 agent 的是同一个接口），拿整天的原话、书摘、健康来挑。App 自己注入 `journalBackend` 的话，加一个 `sources(date)` 返回同样的东西；不加也行，只显示页里已经有的几句。
+
 ---
 
 ## 一、页面要的接口（全部在 `/journal` 下）

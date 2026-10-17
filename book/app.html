@@ -43,6 +43,7 @@
       list: col => fetch(`${api}/kv/${enc(col)}/`, { headers: H() }).then(j).then(x => x || []),
       upload: async blob => fetch(`${api}/assets`, { method: "POST", headers: H({ "Content-Type": blob.type || "application/octet-stream" }), body: blob }).then(j),
       removeAsset: id => fetch(`${api}/assets/${encodeURIComponent(id)}`, { method: "DELETE", headers: H() }).then(j),
+      sources: date => fetch(`${api}/sources/${date}?full=1`, { headers: H() }).then(j),   // (1018) 引用栏要整天的原话、书摘、健康
       callTool: (tool, args, server) => fetch(`${api}/tool/${encodeURIComponent(tool)}`, { method: "POST", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ server, args }) }).then(j),
       watch: cb => {                                                // 服务器推：SSE，每条 {path, data|null}
         try { const es = new EventSource(`${api}/events${token ? "?token=" + encodeURIComponent(token) : ""}`);
@@ -1775,26 +1776,26 @@ const qid=(d,i)=>d+"#"+i;
 
 /* 其他日子：日历，有记录的日子按条数深浅（跟本子的热力图一样） */
 let qCal=false,qMon=-1,qSlide=0;const QYEAR=2026;
-function qMonths(){const ms=[...new Set([PAGE_DAY,...Object.keys(qLog())].map(d=>+d.split(".")[0]))].sort((a,b)=>a-b);return ms}
+function qMonths(){const ms=[...new Set([PAGE_DAY,...Object.keys(qLog()),...(quoteSub==="聊天"&&window.__bzHeat?Object.keys(__bzHeat):[])].map(d=>+d.split(".")[0]))].sort((a,b)=>a-b);return ms}
 function qCalHTML(){const ms=qMonths();if(qMon<0||qMon>=ms.length)qMon=ms.indexOf(+PAGE_DAY.split(".")[0]);const m=ms[qMon];const L=qLog();
- const first=new Date(QYEAR,m-1,1),days=new Date(QYEAR,m,0).getDate(),lead=(first.getDay()+6)%7;const max=Math.max(1,...Object.values(L).map(x=>x.length));
+ const first=new Date(QYEAR,m-1,1),days=new Date(QYEAR,m,0).getDate(),lead=(first.getDay()+6)%7;const HT=quoteSub==="聊天"&&window.__bzHeat||{};const max=Math.max(1,...Object.values(L).map(x=>x.length),...Object.values(HT).map(Number));
  let cells="";for(let i=0;i<lead;i++)cells+=`<i></i>`;
- for(let d=1;d<=days;d++){const k=m+"."+d,n=(L[k]||[]).length;cells+=n?`<button class="tap qc ${k===qDay?"on":""} ${k===PAGE_DAY?"pg":""}" data-qd="${k}" style="--h:${(.25+.75*n/max).toFixed(2)}">${d}<b>${n}</b></button>`:`<span class="qc ${k===PAGE_DAY?"pg":""}">${d}</span>`}
+ for(let d=1;d<=days;d++){const k=m+"."+d,n=Math.max((L[k]||[]).length,+HT[k]||0);cells+=n?`<button class="tap qc ${k===qDay?"on":""} ${k===PAGE_DAY?"pg":""}" data-qd="${k}" style="--h:${(.25+.75*n/max).toFixed(2)}">${d}<b>${n>99?"99+":n}</b></button>`:`<span class="qc ${k===PAGE_DAY?"pg":""}">${d}</span>`}
  return `<div class="qcal ${qSlide>0?"sl-r":qSlide<0?"sl-l":""}"><div class="qch"><button class="tap" data-qm="-1" ${qMon?"":"disabled"} aria-label="上个月"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M7.5 3l-3 3 3 3"/></svg></button><b>${QYEAR} · ${m} 月</b><button class="tap" data-qm="1" ${qMon<ms.length-1?"":"disabled"} aria-label="下个月"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M4.5 3l3 3-3 3"/></svg></button></div>
  <div class="qcw">${"一二三四五六日".split("").map(x=>`<span>${x}</span>`).join("")}</div><div class="qcg">${cells}</div><p class="qhint">颜色越深那天${quoteSub==="聊天"?"说得越多":"吃得越多"}，点一天看那天的</p></div>`}
-function quotePickerHTML(){const L=qLog()[qDay]||[];const sel=QSEL[quoteSub];
+function quotePickerHTML(){window.qFullDay&&qFullDay(qDay);const L=qLog()[qDay]||[];const sel=QSEL[quoteSub];
  const rows=L.map((x,i)=>{const on=sel.includes(qid(qDay,i));if(quoteSub==="书摘"||quoteSub==="健康")return qrowExtra(x,i,on);return quoteSub==="聊天"
   ?`<button class="qrow ${x.w} ${on?"on":""}" data-qi="${i}" style="--i:${i}"><i class="ck"></i><span class="qb"><span class="qp">${esc(x.p)}</span><span class="qm">${esc(NM(x.w))}${x.t?" · "+x.t:""}${x.src&&x.src!=="原话"?` · <em>${esc(x.src)}</em>`:""}</span></span></button>`
   :`<button class="qrow food ${on?"on":""}" data-qi="${i}" style="--i:${i}"><i class="ck"></i><span class="qb"><span class="qp">${esc(x.dish)}${x.rate?` <b class="${x.rate==="好吃"?"ok":""}">${esc(x.rate)}</b>`:""}</span><span class="qm">${esc(x.meal)}${x.at?" · "+esc(x.at):""}${x.t?" · "+x.t:""}${x.q?" · 「"+esc(x.q)+"」":""}</span></span></button>`}).join("");
- return `<div class="qlist">${rows||`<div class="empty-t">${qDay===PAGE_DAY?"这页这天":"这天"}没有${quoteSub==="书摘"||quoteSub==="健康"?qExtraEmpty():quoteSub==="聊天"?"聊天记录":"记吃的"}，点上面别的日子挑</div>`}</div>
+ return `<div class="qlist">${rows||`<div class="empty-t">${qDay===PAGE_DAY?"这页这天":"这天"}没有${quoteSub==="书摘"||quoteSub==="健康"?qExtraEmpty():quoteSub==="聊天"?"聊天记录"+(window.QF_PEND&&QF_PEND.has(qDay)?"（正在取）":""):"记吃的"}，点上面别的日子挑</div>`}</div>
  <div class="qbar"><span>${sel.length?`已选 ${sel.length} ${quoteSub==="聊天"?"句":"样"}${new Set(sel.map(x=>x.split("#")[0])).size>1?" · 跨了几天":""}`:"点一句选中，可以多选、跨日子选"}</span>${sel.length?`<button class="tap" data-qa="clr">清空</button><button class="tap go" data-qa="put">贴到页上</button>`:""}</div>`}
 function wireQuote(){$$("[data-qi]").forEach(b=>b.onclick=()=>{const id=qid(qDay,+b.dataset.qi);const sel=QSEL[quoteSub];const i=sel.indexOf(id);if(i>=0)sel.splice(i,1);else sel.push(id);buzz(4);const st=$("#wxrow .qlist").scrollTop;renderTray();$("#wxrow").classList.add("still");const l=$("#wxrow .qlist");if(l)l.scrollTop=st;requestAnimationFrame(()=>requestAnimationFrame(()=>$("#wxrow").classList.remove("still")))});
  $$("[data-qa]").forEach(b=>b.onclick=()=>{if(b.dataset.qa==="clr"){QSEL[quoteSub]=[];renderTray();return}
   const ids=QSEL[quoteSub].slice().sort((a,b)=>{const [da,ia]=a.split("#"),[db,ib]=b.split("#");return dayNum(da)-dayNum(db)||ia-ib});
-  const key=(quoteSub==="书摘"||quoteSub==="健康")?(quoteSub==="书摘"?"b:":"h:")+encodeURIComponent(JSON.stringify(ids.map(id=>{const [d,i]=id.split("#");return qxSlim(Object.assign({d},qLog()[d][+i]))}))):(quoteSub==="聊天"?"c:":"f:")+ids.join(",");const pg=$("#page").getBoundingClientRect();const y=Math.max(40,Math.min(pg.height-200,innerHeight*.35-pg.top));
+  const key=(quoteSub==="书摘"||quoteSub==="健康")?(quoteSub==="书摘"?"b:":"h:")+encodeURIComponent(JSON.stringify(ids.map(id=>{const [d,i]=id.split("#");return qxSlim(Object.assign({d},qLog()[d][+i]))}))):(quoteSub==="聊天"?"C:"+encodeURIComponent(JSON.stringify(ids.map(id=>{const [d,i]=id.split("#");const x=(qLog()[d]||[])[+i]||{};return {d,w:x.w,t:x.t||"",p:String(x.p||"").slice(0,300),src:x.src||"原话"}}))):"f:"+ids.join(","));const pg=$("#page").getBoundingClientRect();const y=Math.max(40,Math.min(pg.height-200,innerHeight*.35-pg.top));
   const n=$$("#page .stk.c-qsel").length;const st=place("qsel",key,pg.width/2-110+(n%2?40:-30),y+n*36,"her",true);QSEL[quoteSub]=[];renderTray();st.scrollIntoView({behavior:"smooth",block:"center"});buzz(12);toast("贴上了 · 可以拖、转、撕")})}
 function qselItem(k){const kind=k[0],ids=k.slice(2).split(",").filter(Boolean);if(kind==="b"||kind==="h")return qselExtra(kind,k.slice(2));
- if(kind==="c"){const L=ids.map(id=>{const [d,i]=id.split("#");return Object.assign({d},CHATLOG[d][+i])}).filter(x=>x.p);if(!L.length)return null;
+ if(kind==="c"||kind==="C"){const L=(kind==="C"?(()=>{try{const A=JSON.parse(decodeURIComponent(k.slice(2)));return Array.isArray(A)?A:[]}catch(e){return []}})():ids.map(id=>{const [d,i]=id.split("#");return Object.assign({d},(CHATLOG[d]||[])[+i])})).filter(x=>x&&x.p);if(!L.length)return null;
   const days=[...new Set(L.map(x=>x.d))];const dl=x=>days.length>1||x.d!==PAGE_DAY?x.d+(x.t?" "+x.t:""):x.t;
   if(L.length===1){const q=L[0];return {w:180,html:1,n:"原话",make:()=>`<div class="qt ${q.w}">${esc(q.p)}<div class="m"><span>${esc(NM(q.w))}${q.src&&q.src!=="原话"?" · "+esc(q.src):""}</span><span>${esc(dl(q)||q.d)}</span></div></div>`}}
   const ts=L.map(x=>x.t).filter(Boolean);const hd=days.length>1?days[0]+" – "+days[days.length-1]:(ts.length?ts[0]+(ts.length>1?" – "+ts[ts.length-1]:""):days[0]);
@@ -2244,7 +2245,7 @@ addEventListener("keydown",e=>{if(e.key==="Escape"){closeLib();closeSave()}});
 window.journalKit={version:"0.4",day:PAGE_DAY,
  how:"place(cat,key,x,y,who,anim,opt) 往纸上贴；who 是 'her' 或 'me'；opt 可带 {t 改字, st 形态序号, w 宽, h 高, r 旋转}。decorate() 按风格撒装饰。addNote({b 零件, fx, fy, text}) 留批注。数据格式见 data。",
  stickers:()=>Object.fromEntries(Object.entries(LIB).map(([c,v])=>[c,{name:v.name,keys:v.gen==="kao"?"颜文字原文":v.gen==="crab"?Object.keys(CRAB).slice(0,6).concat("…"):v.gen==="clip"?CLIP.meta.map(m=>m.k):v.gen==="mine"?MINE_STK.map(m=>({key:m.id,note:m.note,group:m.g})):v.gen==="tape"?"<HeroPattern名>|<底色序号0-8>":v.gen==="line"?"<花边名>|<颜色序号>":v.gen==="icon"?"<phosphor名>|d或l|<颜色序号>":v.gen==="emoji"?"<fluent名>":v.gen==="quote"?"不是贴纸，用 qsel":Object.keys(v.items)}])),
- qsel:"place('qsel','c:<日期>#<序号>,…') 贴引用的话；'f:<日期>#<序号>,…' 贴吃了吗",
+ qsel:"place('qsel','C:'+encodeURIComponent(JSON.stringify([{d:'<月.日>',w:'her|me',t,p:'原话一字不改'}]))) 贴引用的话（旧写法 c:<日期>#<序号> 也认）；'b:'+encodeURIComponent(JSON.stringify([{d,book,ch,quote,note,who,t}])) 贴书摘；'h:'+encodeURIComponent(JSON.stringify([{d,k,n,v,s}])) 贴健康；'f:<日期>#<序号>,…' 贴吃了吗",
  data:{weather:"db wx/<月.日> = {at,code,hi,lo,mm,wind,sun,src}",chat:"CHATLOG[月.日] = [{w,t,p,src}]",food:"FOODLOG[月.日] = [{meal,at,t,dish,rate,q}]",page:"db page/<月.日> = {stk:[…], hide:[零件id], ts}",notes:"db notes/<id> = {day,who,text,at,re,b,fx,fy}",mine:"db mine/<id> = {note 备注, g 分组, src, w, h} · 她自己传的贴纸，按 note 挑",stickerNotes:"cfg/main.stkNote{类~key:备注}，stkHide 是她藏起来的，别用",cfg:"db cfg/main"},
  blocks:BLK_N};
 
@@ -2831,17 +2832,19 @@ h.addEventListener("pointerdown",function(e){var s=(typeof selStk!=="undefined")
  try{dragging=true}catch(_){}try{h.setPointerCapture(e.pointerId)}catch(_){}var c=center(s),a0=Math.atan2(e.clientY-c.y,e.clientX-c.x),r0=num(s,"--r",0);s.classList.add("turning");
  function mv(ev){var d=r0+(Math.atan2(ev.clientY-c.y,ev.clientX-c.x)-a0)*180/Math.PI,sn=Math.round(d/45)*45;if(Math.abs(d-sn)<4)d=sn;
   s.style.setProperty("--r",d.toFixed(1)+"deg");posRot()}
- function up(){try{dragging=false}catch(_){}s.classList.remove("turning");h.removeEventListener("pointermove",mv);h.removeEventListener("pointerup",up);h.removeEventListener("pointercancel",up);
+ var done=false;function up(){if(done)return;done=true;try{dragging=false}catch(_){}s.classList.remove("turning");h.removeEventListener("pointermove",mv);h.removeEventListener("pointerup",up);h.removeEventListener("pointercancel",up);document.removeEventListener("pointerup",up,true);document.removeEventListener("pointercancel",up,true);
   try{posRsz()}catch(_){}moveBar(s);try{savePage()}catch(_){}try{buzz(5)}catch(_){}}
- h.addEventListener("pointermove",mv);h.addEventListener("pointerup",up);h.addEventListener("pointercancel",up)});
+ h.addEventListener("pointermove",mv);h.addEventListener("pointerup",up);h.addEventListener("pointercancel",up);document.addEventListener("pointerup",up,true);document.addEventListener("pointercancel",up,true)});
 var P=new Map(),g=null;
-pg.addEventListener("pointerdown",function(e){if(e.target.closest("#rotH,#rsz,#stkbar"))return;P.set(e.pointerId,{x:e.clientX,y:e.clientY,s:e.target.closest(".stk.placed")});
- if(P.size===2){var v=Array.from(P.values()),a=v[0],b=v[1],st=a.s||b.s;if(!st)return;e.stopImmediatePropagation();e.preventDefault();
+pg.addEventListener("pointerdown",function(e){if(e.isPrimary){P.clear();P.sel=(typeof selStk!=="undefined"&&selStk)||null;if(g){g.s.classList.remove("turning");g=null;try{dragging=false}catch(_){}}window.__stk2=false}/* 1018：第一根手指按下就清掉旧记录，抬起漏收一次也不会一直当成两指 */if(e.pointerType!=="touch"||e.target.closest("#rotH,#rsz,#stkbar"))return;P.set(e.pointerId,{x:e.clientX,y:e.clientY,s:e.target.closest(".stk.placed")});
+ if(P.size===2){var v=Array.from(P.values()),a=v[0],b=v[1],st=a.s||b.s||(P.sel&&P.sel.isConnected?P.sel:null);if(!st)return;   /* 小贴纸两指按不全：选中的那张，在旁边捏也算 */
+ e.stopImmediatePropagation();e.preventDefault();
   window.__stk2=true;try{dragging=true}catch(_){}st.classList.remove("grab");st.classList.add("turning");
-  g={s:st,a0:Math.atan2(b.y-a.y,b.x-a.x),d0:Math.max(10,Math.hypot(b.x-a.x,b.y-a.y)),r0:num(st,"--r",0),s0:num(st,"--s",1)}}},true);
+  g={s:st,acc:0,la:Math.atan2(b.y-a.y,b.x-a.x),a0:Math.atan2(b.y-a.y,b.x-a.x),d0:Math.max(10,Math.hypot(b.x-a.x,b.y-a.y)),r0:num(st,"--r",0),s0:num(st,"--s",1)}}},true);
 document.addEventListener("pointermove",function(e){var p=P.get(e.pointerId);if(!p)return;p.x=e.clientX;p.y=e.clientY;if(!g||P.size<2)return;
  var v=Array.from(P.values()),a=v[0],b=v[1],ang=Math.atan2(b.y-a.y,b.x-a.x),d=Math.hypot(b.x-a.x,b.y-a.y);
- g.s.style.setProperty("--r",(g.r0+(ang-g.a0)*180/Math.PI).toFixed(1)+"deg");g.s.style.setProperty("--s",Math.max(.4,Math.min(2.6,g.s0*d/g.d0)).toFixed(2));
+ var dA=ang-g.la;dA-=Math.round(dA/(2*Math.PI))*2*Math.PI;g.la=ang;g.acc+=dA;   /* 1018：一点点累加，过 180 度不跳成 -315 */
+ g.s.style.setProperty("--r",(g.r0+g.acc*180/Math.PI).toFixed(1)+"deg");g.s.style.setProperty("--s",Math.max(.4,Math.min(2.6,g.s0*d/g.d0)).toFixed(2));
  if(typeof selStk!=="undefined"&&selStk===g.s)posRot()},true);
 function end(e){P.delete(e.pointerId);if(g&&P.size<2){var s=g.s;g=null;s.classList.remove("turning");try{dragging=false}catch(_){}
  setTimeout(function(){window.__stk2=false},60);try{savePage()}catch(_){}}}
@@ -2856,7 +2859,7 @@ function qrowExtra(x,i,on){
  return '<button class="qrow health'+(on?" on":"")+'" data-qi="'+i+'" style="--i:'+i+'"><i class="ck"></i><span class="qb"><span class="qp">'+esc(x.n)+' <b>'+esc(x.s)+'</b></span><span class="qm">那天的身体</span></span></button>'}
 var QX_ASKED=new Set();
 function qExtraEmpty(){var k=qDay;if(window.__bzExtra&&!QX_ASKED.has(k)){QX_ASKED.add(k);window.__bzExtra(k,function(){try{renderTray()}catch(e){}});return (quoteSub==="书摘"?"书摘":"健康数据")+"（正在去家里取）"}
- return quoteSub==="书摘"?"书摘":"健康数据"}
+ return (quoteSub==="书摘"?"书摘":"健康数据")+(window.QF_PEND&&QF_PEND.has(k)?"（正在取）":"")}
 function qselExtra(kind,raw){var L;try{L=JSON.parse(decodeURIComponent(raw))}catch(e){return null}if(!Array.isArray(L)||!L.length)return null;
  if(kind==="b"){var one=L.length===1;return {w:one?210:230,html:1,n:"书摘",make:function(){return '<div class="bq'+(one?"":" many")+'">'+L.map(function(x){
    return '<div class="bq-i"><div class="bq-q">'+esc(qxCut(x.quote,140))+'</div><div class="bq-m">《'+esc(x.book||"")+'》'+(x.ch?' · '+esc(chShort(x.ch)):"")+'</div>'
@@ -2871,6 +2874,17 @@ window.placeExtra=function(k){try{var R=(window.BZPICK||{})[k]||null;   /* LIVE 
  if(Array.isArray(R.health)&&R.health.length){var w=blk("wx");var y2=w?w.offsetTop+w.offsetHeight+6:160;   /* 天气那行下面，不压字 */
   place("qsel","h:"+encodeURIComponent(JSON.stringify(R.health.map(function(x){return qxSlim(Object.assign({d:k},x))}))),Math.max(8,W-160),y2,"me",false,{r:3})}
  restoring=was}catch(e){}};
+</script>
+<script>/* 引用栏看整天的话（1018） */
+var QF_DONE=new Set(),QF_PEND=new Set();
+function qFullKey(k){var p=String(k).split("."),m=+p[0],d=+p[1],now=new Date(),y=now.getFullYear();if(new Date(y,m-1,d)>now)y-=1;return y+"-"+(m<10?"0":"")+m+"-"+(d<10?"0":"")+d}
+window.qFullDay=function(k){if(!k||QF_DONE.has(k))return;QF_DONE.add(k);try{QX_ASKED.add(k)}catch(e){}
+ var B=window.journalBackend;if(!window.__bzExtra&&!(B&&B.sources))return;QF_PEND.add(k);
+ var cb=function(){QF_PEND.delete(k);try{["聊天","书摘","健康"].forEach(function(t){QSEL[t]=QSEL[t].filter(function(id){return String(id).split("#")[0]!==k})})}catch(e){}try{if(typeof cat!=="undefined"&&cat==="quote"&&qDay===k)renderTray()}catch(e){}};
+ if(window.__bzExtra){window.__bzExtra(k,cb);return}
+ B.sources(qFullKey(k)).then(function(s){if(s){try{var C=(s.chat||[]).filter(function(x){return x&&x.p&&x.via!=="手帐"}).map(function(x){return {w:x.w,t:x.t||"",p:x.p,src:"原话"}});
+   if(C.length>=((CHATLOG[k]||[]).length))CHATLOG[k]=C}catch(e){}
+  try{if(Array.isArray(s.book)&&s.book.length)BOOKLOG[k]=s.book;if(Array.isArray(s.health)&&s.health.length)HEALTHLOG[k]=s.health}catch(e){}}cb()}).catch(cb)};
 </script>
 </body>
 </html>
