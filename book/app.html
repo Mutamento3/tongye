@@ -1783,9 +1783,9 @@ function qCalHTML(){const ms=qMonths();if(qMon<0||qMon>=ms.length)qMon=ms.indexO
  for(let d=1;d<=days;d++){const k=m+"."+d,n=Math.max((L[k]||[]).length,+HT[k]||0);cells+=n?`<button class="tap qc ${k===qDay?"on":""} ${k===PAGE_DAY?"pg":""}" data-qd="${k}" style="--h:${(.25+.75*n/max).toFixed(2)}">${d}<b>${n>99?"99+":n}</b></button>`:`<span class="qc ${k===PAGE_DAY?"pg":""}">${d}</span>`}
  return `<div class="qcal ${qSlide>0?"sl-r":qSlide<0?"sl-l":""}"><div class="qch"><button class="tap" data-qm="-1" ${qMon?"":"disabled"} aria-label="上个月"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M7.5 3l-3 3 3 3"/></svg></button><b>${QYEAR} · ${m} 月</b><button class="tap" data-qm="1" ${qMon<ms.length-1?"":"disabled"} aria-label="下个月"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M4.5 3l3 3-3 3"/></svg></button></div>
  <div class="qcw">${"一二三四五六日".split("").map(x=>`<span>${x}</span>`).join("")}</div><div class="qcg">${cells}</div><p class="qhint">颜色越深那天${quoteSub==="聊天"?"说得越多":"吃得越多"}，点一天看那天的</p></div>`}
-function quotePickerHTML(){window.qFullDay&&qFullDay(qDay);const L=qLog()[qDay]||[];const sel=QSEL[quoteSub];
+function quotePickerHTML(){window.qFullDay&&qFullDay(qDay);window.qSplitDay&&qSplitDay(qDay);const L=qLog()[qDay]||[];const sel=QSEL[quoteSub];
  const rows=L.map((x,i)=>{const on=sel.includes(qid(qDay,i));if(quoteSub==="书摘"||quoteSub==="健康")return qrowExtra(x,i,on);return quoteSub==="聊天"
-  ?`<button class="qrow ${x.w} ${on?"on":""}" data-qi="${i}" style="--i:${i}"><i class="ck"></i><span class="qb"><span class="qp">${esc(x.p)}</span><span class="qm">${esc(NM(x.w))}${x.t?" · "+x.t:""}${x.src&&x.src!=="原话"?` · <em>${esc(x.src)}</em>`:""}</span></span></button>`
+  ?`<button class="qrow ${x.w} ${on?"on":""}" data-qi="${i}" style="--i:${i}"><i class="ck"></i><span class="qb"><span class="qp">${window.qRich?qRich(x.p):esc(x.p)}</span><span class="qm">${esc(NM(x.w))}${x.t?" · "+x.t:""}${x.src&&x.src!=="原话"?` · <em>${esc(x.src)}</em>`:""}</span></span></button>`
   :`<button class="qrow food ${on?"on":""}" data-qi="${i}" style="--i:${i}"><i class="ck"></i><span class="qb"><span class="qp">${esc(x.dish)}${x.rate?` <b class="${x.rate==="好吃"?"ok":""}">${esc(x.rate)}</b>`:""}</span><span class="qm">${esc(x.meal)}${x.at?" · "+esc(x.at):""}${x.t?" · "+x.t:""}${x.q?" · 「"+esc(x.q)+"」":""}</span></span></button>`}).join("");
  return `<div class="qlist">${rows||`<div class="empty-t">${qDay===PAGE_DAY?"这页这天":"这天"}没有${quoteSub==="书摘"||quoteSub==="健康"?qExtraEmpty():quoteSub==="聊天"?"聊天记录"+(window.QF_PEND&&QF_PEND.has(qDay)?"（正在取）":""):"记吃的"}，点上面别的日子挑</div>`}</div>
  <div class="qbar"><span>${sel.length?`已选 ${sel.length} ${quoteSub==="聊天"?"句":"样"}${new Set(sel.map(x=>x.split("#")[0])).size>1?" · 跨了几天":""}`:"点一句选中，可以多选、跨日子选"}</span>${sel.length?`<button class="tap" data-qa="clr">清空</button><button class="tap go" data-qa="put">贴到页上</button>`:""}</div>`}
@@ -1797,10 +1797,10 @@ function wireQuote(){$$("[data-qi]").forEach(b=>b.onclick=()=>{const id=qid(qDay
 function qselItem(k){const kind=k[0],ids=k.slice(2).split(",").filter(Boolean);if(kind==="b"||kind==="h")return qselExtra(kind,k.slice(2));
  if(kind==="c"||kind==="C"){const L=(kind==="C"?(()=>{try{const A=JSON.parse(decodeURIComponent(k.slice(2)));return Array.isArray(A)?A:[]}catch(e){return []}})():ids.map(id=>{const [d,i]=id.split("#");return Object.assign({d},(CHATLOG[d]||[])[+i])})).filter(x=>x&&x.p);if(!L.length)return null;
   const days=[...new Set(L.map(x=>x.d))];const dl=x=>days.length>1||x.d!==PAGE_DAY?x.d+(x.t?" "+x.t:""):x.t;
-  if(L.length===1){const q=L[0];return {w:180,html:1,n:"原话",make:()=>`<div class="qt ${q.w}">${esc(q.p)}<div class="m"><span>${esc(NM(q.w))}${q.src&&q.src!=="原话"?" · "+esc(q.src):""}</span><span>${esc(dl(q)||q.d)}</span></div></div>`}}
+  if(L.length===1){const q=L[0];return {w:180,html:1,n:"原话",make:()=>`<div class="qt ${q.w}">${window.qRich?qRich(q.p):esc(q.p)}<div class="m"><span>${esc(NM(q.w))}${q.src&&q.src!=="原话"?" · "+esc(q.src):""}</span><span>${esc(dl(q)||q.d)}</span></div></div>`}}
   const ts=L.map(x=>x.t).filter(Boolean);const hd=days.length>1?days[0]+" – "+days[days.length-1]:(ts.length?ts[0]+(ts.length>1?" – "+ts[ts.length-1]:""):days[0]);
   return {w:230,html:1,n:"原话",make:()=>`<div class="note-wrap qnote"><div class="tape"></div><div class="torn"><div class="hd"><span class="mono">${esc(hd)} · ${L.every(x=>x.src==="原话")?"原话":"演示"}</span><span class="mono">${L.length} 句</span></div>
-   <div class="first ${L[0].w}">${esc(L[0].p)}<span class="t">${esc(NM(L[0].w))}${dl(L[0])?" · "+esc(dl(L[0])):""}${L[0].src&&L[0].src!=="原话"?" · "+esc(L[0].src):""}</span></div><div class="lines"><div>${L.slice(1).map(x=>`<div class="ln ${x.w}">${esc(x.p)}<span class="t">${esc(NM(x.w))}${dl(x)?" · "+esc(dl(x)):""}${x.src&&x.src!=="原话"?" · "+esc(x.src):""}</span></div>`).join("")}</div></div>
+   <div class="first ${L[0].w}">${window.qRich?qRich(L[0].p):esc(L[0].p)}<span class="t">${esc(NM(L[0].w))}${dl(L[0])?" · "+esc(dl(L[0])):""}${L[0].src&&L[0].src!=="原话"?" · "+esc(L[0].src):""}</span></div><div class="lines"><div>${L.slice(1).map(x=>`<div class="ln ${x.w}">${window.qRich?qRich(x.p):esc(x.p)}<span class="t">${esc(NM(x.w))}${dl(x)?" · "+esc(dl(x)):""}${x.src&&x.src!=="原话"?" · "+esc(x.src):""}</span></div>`).join("")}</div></div>
    <button class="more qmore" type="button"><span>展开</span><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4l4 4 4-4"/></svg></button></div></div>`}}
  const F=ids.map(id=>{const [d,i]=id.split("#");return Object.assign({d},FOODLOG[d][+i])}).filter(x=>x.dish);if(!F.length)return null;
  if(F.length===1){const x=F[0];return {w:Math.round(26+tw(x.dish)*13+(x.rate==="好吃"?40:x.rate?tw(x.rate)*11+10:0)),n:x.dish,make:()=>dishSVG(x.dish,x.rate||"")}}
@@ -2960,7 +2960,7 @@ var bar=document.getElementById("stkbar");
 bar&&bar.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest('[data-a="txt"]');if(!b)return;var s=null;try{s=selStk}catch(_){}if(!s||!s.querySelector(".mt"))return;
  var it=null;try{it=getItem(s.dataset.c,s.dataset.k)}catch(_){}if(it&&it.edit)return;e.stopPropagation();e.preventDefault();edOn(s)},true);
 })();</script>
-<style>/* 贴纸栏点得准（1018） */#cats,#wxdays,.tray .isets{touch-action:pan-x}#traySpacer{pointer-events:none}</style><script>/* 贴纸栏点得准（1018） */(function(){
+<style>/* 贴纸栏点得准（1018） */#traySpacer{pointer-events:none}</style><script>/* 贴纸栏点得准（1018） */(function(){
 var tray=document.getElementById("tray");if(!tray)return;
 var sp=document.createElement("div");sp.id="traySpacer";sp.setAttribute("aria-hidden","true");tray.after(sp);
 var total=0;
@@ -2976,5 +2976,19 @@ tray.addEventListener("click",function(e){var b=e.target.closest&&e.target.close
 addEventListener("pointerup",function(e){var d=t0;if(!d)return;t0=null;var mv=Math.hypot(e.clientX-d.x,e.clientY-d.y);if(mv>16||Date.now()-d.t>600)return;
  setTimeout(function(){if(!d.clicked&&d.b.isConnected){synth={b:d.b,t:Date.now()};d.b.click()}},120)},true);
 })();</script>
+<style>/* 引用栏选句子（1018） */.qcrab{height:2em;width:auto;vertical-align:-.55em;margin:0 2px}.qrow .qp .qcrab{height:2.4em}.qt .qcrab,.qnote .qcrab{height:3em}</style><script>/* 引用栏选句子（1018） */
+function qRich(t){var h=esc(String(t==null?"":t));var M=window.CRAB_STK;if(!M)return h;
+ return h.replace(/\[螃蟹表情[·:：]([^\]\n]{1,8})\]/g,function(m,nm){return M[nm]?'<img class="qcrab" alt="'+nm+'" src="'+M[nm]+'">':m})}
+window.qSplitDay=function(k){var L=(typeof CHATLOG!=="undefined")&&CHATLOG[k];if(!L||L.__sp)return;var out=[];
+ L.forEach(function(x){var ps=String(x&&x.p||"").split(/\n+|\|\|\|/).map(function(s){return s.trim()}).filter(Boolean);
+  if(ps.length<2){out.push(x);return}ps.forEach(function(p,j){out.push(Object.assign({},x,{p:p,part:j+1,parts:ps.length}))})});
+ out.__sp=true;CHATLOG[k]=out};
+(function(){if(typeof wireQuote!=="function")return;var _wq=wireQuote;
+ function foot(){try{var tmp=document.createElement("div");tmp.innerHTML=quotePickerHTML();var nb=tmp.querySelector(".qbar"),ob=document.querySelector("#wxrow .qbar");if(nb&&ob)ob.replaceWith(nb);
+  var n=QSEL[quoteSub].length,t=document.querySelector('#wxdays [data-qs="'+quoteSub+'"]');if(t)t.innerHTML=quoteSub+(n?"<sup>"+n+"</sup>":"")}catch(e){}}
+ wireQuote=function(){_wq.apply(this,arguments);document.querySelectorAll("#wxrow [data-qi]").forEach(function(b){b.onclick=function(){
+  var id=qid(qDay,+b.dataset.qi),sel=QSEL[quoteSub],i=sel.indexOf(id);if(i>=0)sel.splice(i,1);else sel.push(id);b.classList.toggle("on",i<0);try{buzz(4)}catch(e){}
+  foot();wireQuote()}})}})();
+</script>
 </body>
 </html>
