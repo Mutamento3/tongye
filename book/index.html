@@ -3019,5 +3019,21 @@ var bar=document.getElementById("stkbar");
 bar&&bar.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest('[data-a="txt"]');if(!b)return;var s=null;try{s=selStk}catch(_){}if(!s||!s.querySelector(".mt"))return;
  var it=null;try{it=getItem(s.dataset.c,s.dataset.k)}catch(_){}if(it&&it.edit)return;e.stopPropagation();e.preventDefault();edOn(s)},true);
 })();</script>
+<style>/* 贴纸栏点得准（1018） */#cats,#wxdays,.tray .isets{touch-action:pan-x}#traySpacer{pointer-events:none}</style><script>/* 贴纸栏点得准（1018） */(function(){
+var tray=document.getElementById("tray");if(!tray)return;
+var sp=document.createElement("div");sp.id="traySpacer";sp.setAttribute("aria-hidden","true");tray.after(sp);
+var total=0;
+function before(){total=Math.max(total,tray.offsetHeight+sp.offsetHeight);sp.style.height=total+"px"}
+function after(){var h=tray.offsetHeight;total=Math.max(total,h);sp.style.height=Math.max(0,total-h)+"px"}
+if(typeof renderTray==="function"){var _rt=renderTray;renderTray=function(){before();try{return _rt.apply(this,arguments)}finally{after();requestAnimationFrame(after)}}}
+/* 手指动了一点点也算点到：浏览器没点上的，这里补一下；补过的就不让它再点一次 */
+var t0=null,synth=null;
+tray.addEventListener("pointerdown",function(e){var b=e.target.closest("#cats button,#wxdays button,.isets button");t0=b?{b:b,x:e.clientX,y:e.clientY,t:Date.now(),clicked:false}:null},true);
+tray.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("button");if(!b)return;
+ if(e.isTrusted&&synth&&synth.b===b&&Date.now()-synth.t<500){synth=null;e.stopImmediatePropagation();e.preventDefault();return}
+ if(t0&&t0.b===b)t0.clicked=true},true);
+addEventListener("pointerup",function(e){var d=t0;if(!d)return;t0=null;var mv=Math.hypot(e.clientX-d.x,e.clientY-d.y);if(mv>16||Date.now()-d.t>600)return;
+ setTimeout(function(){if(!d.clicked&&d.b.isConnected){synth={b:d.b,t:Date.now()};d.b.click()}},120)},true);
+})();</script>
 </body>
 </html>
