@@ -2709,7 +2709,7 @@ function buildDay(R){const k=R.day;const [m,d]=k.split(".").map(Number);const ph
  const P={t:R.title||k,at:R.at||"",sub:R.sub||"",p:T.p1||"",say:chat.slice(0,8).map(x=>[x.w,x.t||"",x.p]),food:f?{meal:f.meal,at:f.at,t:f.t||"",items:f.items||[],q:f.q||""}:null,hero:hero?[hero.src]:null,live:1};
  return {D,P,photos:ph.map(p=>p.src)}}
 /* 收 db 里的 day/<日期> */
-const LIVE={};const LYN=k=>({column:"单栏流",cover:"大图封面",two:"双栏报刊",margin:"边栏笔记",bento:"格子便当",scatter:"拼贴散落",poster:"只留重点",polaroid:"拍立得墙",letter:"信纸",timeline:"时间线"}[k]||k);
+const LIVE={};const LYN=k=>({column:"单栏流",cover:"大图封面",two:"双栏报刊",margin:"边栏笔记",bento:"格子便当",scatter:"拼贴散落",poster:"只留重点",polaroid:"拍立得墙",letter:"信纸",timeline:"时间线"}[k]||((typeof LAYOUTS!=="undefined"&&LAYOUTS.find(x=>x.id===k))||{}).name||k);
 function ingestDay(R){if(!R||!R.day)return;LIVE[R.day]=R;if(R.status==="making"&&!(R.photos||[]).length&&!(R.text||{}).p1)return;
  try{const {D,P,photos}=buildDay(R);EDATA[R.day]=D;PAGES[R.day]=P;PHOTOS[R.day]=photos;
   DONE[R.day]={t:P.t,img:photos[0]||null,at:P.at,sub:R.sub||`${LYN(D.layout)} · ${R.by==="her"?nmHer():nmMe()}排的`,page:1};
@@ -3187,6 +3187,19 @@ window.__metaLine=function(ph){var M=(ph||[]).map(function(k){return window.__as
  var t=M.map(function(m){return m.local&&m.local.slice(11,16)}).filter(Boolean).sort(),g=M.filter(function(m){return m.lat!=null}).length;
  return (t.length?(t[0]===t[t.length-1]?t[0]:t[0]+"–"+t[t.length-1])+" · ":"")+(g?g+" 张有坐标":"没有坐标")+" · 从你的原图里读的"};
 })();
+</script>
+<script>/* 选日子那屏：接了后端就读那天的原料，数字和缩略图跟真的走（1019） */
+(function(){var seq=0,qs=new URLSearchParams(location.search),meta=function(n){var m=document.querySelector('meta[name="'+n+'"]');return m&&m.content};
+var API=(window.JOURNAL_API||qs.get("api")||meta("journal-api")||"").replace(/\/$/,""),TOKEN=window.JOURNAL_TOKEN||qs.get("token")||meta("journal-token")||"";
+function full(k){var p=String(k).split("."),now=new Date(),y=now.getFullYear();if(new Date(y,+p[0]-1,+p[1])>now)y-=1;return y+"-"+String(+p[0]).padStart(2,"0")+"-"+String(+p[1]).padStart(2,"0")}
+function esc(u){return String(u).replace(/["<>&]/g,function(c){return {'"':"&quot;","<":"&lt;",">":"&gt;","&":"&amp;"}[c]})}
+var prev=window.__bzDay;
+window.__bzDay=function(k){try{prev&&prev(k)}catch(e){}var B=window.journalBackend;if(!B||!B.sources)return;var my=++seq;
+ B.sources(full(k)).then(function(s){if(!s||my!==seq)return;var ph=s.photos||[],food=(s.food||[]).reduce(function(a,m){return a+((m&&m.dishes)||[]).length},0);
+  var f=document.getElementById("dayFound");if(f)f.innerHTML="<span><b>"+ph.length+"</b>张照片</span><span><b>"+(s.chat||[]).length+"</b>句聊天</span><span><b>"+food+"</b>样吃的</span>";
+  var im=ph.slice(0,8).map(function(p){return p.src||(API&&p.has_jpg?API+"/photos/"+encodeURIComponent(p.id)+"/raw"+(TOKEN?"?token="+encodeURIComponent(TOKEN):""):"")}).filter(Boolean);
+  var th=document.getElementById("dayThumbs");if(th&&im.length){th.className="thumbs";th.innerHTML=im.map(function(u){return '<img alt="" loading="lazy" src="'+esc(u)+'">'}).join("")}
+  var w=document.getElementById("dayWhere");if(w&&s.wx&&s.wx.hi!=null&&!/°C/.test(w.textContent))w.textContent=Math.round(s.wx.lo)+"–"+Math.round(s.wx.hi)+"°C"}).catch(function(){})}})();
 </script>
 </body>
 </html>
