@@ -3079,6 +3079,10 @@ window.__askUp=new Map();
 window.__askChain=Promise.resolve();
 window.askUp=function(k,file,PH,rerender){PH[k]="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
  var heic=/heic|heif/i.test((file.type||"")+" "+(file.name||""));
+ /* (1018) 家里收 HEIC：整张原图传上去，服务器转 JPEG、读拍摄信息；这边先不压（一压信息就没了） */
+ if(heic&&window.__bzHeic&&typeof ASSETS!=="undefined"&&ASSETS){var hp=window.__askChain=window.__askChain.then(async function(){
+   try{window.__bzExif=null;var a=await ASSETS.upload(file);if(a&&a.url){PH[k]=a.url;try{rerender()}catch(e){}}else throw new Error(a&&a.error||"没传上")}
+   catch(e){try{toast("这张 HEIC 没传上去，换个网再试")}catch(_){}}});window.__askUp.set(k,hp);return hp}
  var p=window.__askChain=window.__askChain.then(async function(){var sm;
   try{sm=await shrinkBig(file)}catch(e){try{toast(heic?"这张是 HEIC，这个浏览器打不开。用 Safari 传，或者先导出成 JPEG":"这张图打不开，换一张试试")}catch(_){}return}
   PH[k]=sm.data;try{rerender()}catch(e){}
