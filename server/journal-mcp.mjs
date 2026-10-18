@@ -7,7 +7,10 @@
  * Claude Code 里装：claude mcp add journal -- node /路径/journal-mcp.mjs   （环境变量用 -e 传）
  * 你已经有 MCP 服务的话，把下面 TOOLS 抄过去当成你自己的工具也行，名字和参数别改，AGENT.md 是照着这套写的。
  */
-const BASE = (process.env.JOURNAL_URL || "http://localhost:8787").replace(/\/$/, "") + "/journal";
+import fs from "node:fs";
+const ORIGIN = (process.env.JOURNAL_URL || "http://localhost:8787").replace(/\/$/, "");
+const BASE = ORIGIN + "/journal";
+const BLOCKS = ["sp", "ti", "wx", "p1", "he", "ro", "sh", "p2", "qu", "pa", "an", "pe", "su", "tk", "en"];   // 页面上的零件 id，见 AGENT.md
 const TOKEN = process.env.JOURNAL_TOKEN || "";
 const H = (x = {}) => Object.assign(TOKEN ? { Authorization: "Bearer " + TOKEN } : {}, x);
 const api = async (m, p, body) => { const r = await fetch(BASE + p, { method: m, headers: H(body ? { "Content-Type": "application/json" } : {}), body: body ? JSON.stringify(body) : undefined }); if (r.status === 404) return null; if (!r.ok) throw new Error(`${m} ${p} → ${r.status} ${await r.text()}`); return r.json(); };   // 原话核对拒收时，原因和最像的原话都在 body 里，原样带给 agent
@@ -30,10 +33,11 @@ const TOOLS = [
     inputSchema: { type: "object", properties: { date: { type: "string" }, page: { type: "object", description: "title, at, en, region, layout, style, text{p1,p2,cap,ann,pen{text,margin},quote{p,t}}, wx, photos[{src,t,lat,lon,f,shutter,iso,focal,note,role}], geo, shots, places[{n,lat,lon}], chat[{w,t,p}], food{meal,at,t,items,q}" } }, required: ["date", "page"] },
     run: async a => { const k = dayKey(a.date); const cur = (await kv.get("day/" + k)) || {}; const steps = (cur.steps || []).map(s => ({ ...s, ok: true }));
       const doc = { ...a.page, day: k, status: "done", by: a.page.by || "me", steps, ts: Date.now() }; await kv.set("day/" + k, doc); return { ok: 1, day: k }; } },
-  { name: "journal_read_page", description: "看她在某天那页上做了什么：她贴的贴纸、自己打的字（m 字段）、放的照片、藏掉的零件、存过的代、留的批注。",
+  { name: "journal_read_page", description: "看她在某天那页上做了什么：她贴的贴纸、自己打的字（m 字段）、放的照片、藏掉的零件、存过的代、留的批注。还有你们俩的署名 names（her / me，没设过是 null，页面显示默认名）。",
     inputSchema: { type: "object", properties: { date: { type: "string" } }, required: ["date"] },
     run: async a => { const k = dayKey(a.date); const notes = ((await kv.list("notes")) || []).map(r => r.data).filter(n => n && n.day === k);
-      return { day: await kv.get("day/" + k), page: await kv.get("page/" + k), gens: await kv.get("gens/" + k), notes }; } },
+      const cfg = await kv.get("cfg/main");
+      return { day: await kv.get("day/" + k), page: await kv.get("page/" + k), gens: await kv.get("gens/" + k), notes, names: { her: (cfg && cfg.her) || null, me: (cfg && cfg.me) || null } }; } },
   { name: "journal_reply_note", description: "回她在某页上留的批注（贴在同一个气泡里）。",
     inputSchema: { type: "object", properties: { note_id: { type: "string" }, text: { type: "string" } }, required: ["note_id", "text"] },
     run: async a => { const root = await kv.get("notes/" + a.note_id); if (!root) throw new Error("没有这条批注"); const id = "n" + Date.now().toString(36);
@@ -41,7 +45,30 @@ const TOOLS = [
   { name: "journal_asks", description: "看她在本子里点「交给枫」留下的请求（还没做的）。photos 是她这次传的照片地址；photo_meta 按地址给每张的拍摄时间、经纬度、光圈快门（页面缩图前从原图读的，没有就是读不到），写 day 的 photos[] 原样照抄，没有的别编。做完调 journal_write_day 后再用 done=true 关掉。",
     inputSchema: { type: "object", properties: { done_id: { type: "string", description: "要关掉的请求 id，可选" } } },
     run: async a => { if (a.done_id) { const r = await kv.get("ask/" + a.done_id); if (r) await kv.set("ask/" + a.done_id, { ...r, status: "done" }); }
-      return ((await kv.list("ask")) || []).map(r => r.data).filter(x => x && x.status !== "done"); } }
+      return ((await kv.list("ask")) || []).map(r => r.data).filter(x => x && x.status !== "done"); } },
+  { name: "journal_look_photo", description: "看一张照片里是什么（把图本身给你看）。相册里的给 photo_id（journal_sources 里的 id），已经在本子里的、她在「交给」里传的给 src（/journal/assets/… 那种地址）。挑照片、写说明之前先看，别凭 EXIF 猜。",
+    inputSchema: { type: "object", properties: { photo_id: { type: "string" }, src: { type: "string" } } },
+    run: async a => {
+      let u = null;
+      if (a.src) { u = /^https?:/.test(a.src) ? a.src : ORIGIN + (a.src.startsWith("/") ? a.src : "/journal/assets/" + a.src); if (!u.startsWith(ORIGIN + "/")) throw new Error("只看本子里的照片"); }
+      else if (a.photo_id) u = `${BASE}/photos/${encodeURIComponent(a.photo_id)}/raw`;
+      else throw new Error("给 photo_id 或 src");
+      const r = await fetch(u, { headers: H() }); if (!r.ok) throw new Error(`看不到这张：${r.status}`);
+      const b = Buffer.from(await r.arrayBuffer());
+      if (b.length > 4.5 * 1024 * 1024) throw new Error(`这张有 ${(b.length / 1048576).toFixed(1)}MB，太大了，先缩小再看`);
+      const t = (r.headers.get("content-type") || "").split(";")[0];
+      return { __image: { data: b.toString("base64"), mimeType: /^image\/(jpeg|png|webp|gif)$/.test(t) ? t : "image/jpeg" } }; } },
+  { name: "journal_kit", description: "本子里所有的版式（layouts）和风格（styles）：id、名字、一句话说它长什么样；还有零件 id（blocks，留批注用）。两根轴分开选，写 journal_write_day 的 page.layout / page.style 用这里的 id。",
+    inputSchema: { type: "object", properties: {} },
+    run: async () => { try { return JSON.parse(fs.readFileSync(new URL("./journal-kit.json", import.meta.url), "utf8")); }
+      catch { throw new Error("找不到 journal-kit.json（应该跟 journal-mcp.mjs 放在一起）。不确定就别写 layout / style，页面会按照片数量自己挑。"); } } },
+  { name: "journal_add_note", description: "在某天那页的某个零件旁边留一条你的批注，她打开那页会看到一个钉子。block 是零件 id（比如 p1 正文、he 主照片、ro 路线，全部见 journal_kit 的 blocks）；fx / fy 是钉在零件上的位置（0 到 1，默认右上角）。回她的批注用 journal_reply_note。",
+    inputSchema: { type: "object", properties: { date: { type: "string" }, text: { type: "string" }, block: { type: "string" }, fx: { type: "number" }, fy: { type: "number" } }, required: ["date", "text"] },
+    run: async a => { const k = dayKey(a.date), b = a.block || "p1";
+      if (!BLOCKS.includes(b)) throw new Error("没有这个零件：" + b + "。能用的：" + BLOCKS.join(" "));
+      const c = v => Math.min(1, Math.max(0, +v)), id = "n" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+      await kv.set("notes/" + id, { id, day: k, who: "me", at: Date.now(), re: null, text: a.text, b, fx: a.fx == null ? 0.92 : c(a.fx), fy: a.fy == null ? 0.08 : c(a.fy) });
+      return { ok: 1, id }; } }
 ];
 
 /* ---------- MCP over stdio ---------- */
@@ -58,7 +85,9 @@ process.stdin.on("data", async chunk => {
       if (method === "initialize") send({ jsonrpc: "2.0", id, result: { protocolVersion: params && params.protocolVersion || "2025-06-18", capabilities: { tools: {} }, serverInfo: { name: "journal", version: "1.0.0" } } });
       else if (method === "tools/list") send({ jsonrpc: "2.0", id, result: { tools: TOOLS.map(({ run, ...t }) => t) } });
       else if (method === "tools/call") { const t = TOOLS.find(x => x.name === params.name); if (!t) throw new Error("no tool " + params.name);
-        const r = await t.run(params.arguments || {}); send({ jsonrpc: "2.0", id, result: { content: [{ type: "text", text: JSON.stringify(r, null, 1) }] } }); }
+        const r = await t.run(params.arguments || {});
+        if (r && r.__image) send({ jsonrpc: "2.0", id, result: { content: [{ type: "image", data: r.__image.data, mimeType: r.__image.mimeType }] } });   // journal_look_photo：把图本身给 agent
+        else send({ jsonrpc: "2.0", id, result: { content: [{ type: "text", text: JSON.stringify(r, null, 1) }] } }); }
       else if (method === "ping") send({ jsonrpc: "2.0", id, result: {} });
       else if (id != null) send({ jsonrpc: "2.0", id, error: { code: -32601, message: "method not found" } });
     } catch (e) { if (id != null) send({ jsonrpc: "2.0", id, result: { isError: true, content: [{ type: "text", text: String(e.message || e) }] } }); }

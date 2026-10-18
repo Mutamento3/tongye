@@ -10,7 +10,7 @@
  *   3. 推变化（SSE）：/journal/events，两个人、手机和 agent 改了都会推
  *   4. 页面要调的工具：/journal/tool/sync_talk、/journal/tool/get_kaomoji（转给你的 App，见 TOOL_HOOKS）
  *   5. 给 agent 读原料：/journal/sources/<YYYY-MM-DD>（照片 EXIF + 聊天 + 吃了吗 + 天气 + 书摘 + 健康）
- *      和 /journal/photos/<id>/publish（把相册里的一张图放进本子，返回 url）
+ *      和 /journal/photos/<id>/publish（把相册里的一张图放进本子，返回 url）、/journal/photos/<id>/raw（给 agent 看原图）
  *
  * 你已经有自己的数据库和相册的话：保持这些路径和返回格式不变，把 sources / publish / TOOL_HOOKS 里读文件的地方换成你自己的就行。
  */
@@ -49,6 +49,29 @@ const clients = new Set();
 const push = (p, data) => { const line = `data: ${JSON.stringify({ path: p, data })}\n\n`; clients.forEach(c => c.write(line)); };
 
 /* ---------- 页面要调的工具：你的 App 有就转过去 ---------- */
+/* 吃了吗：设了 HAVE_YOU_EATEN_URL 就从它的 GET /api/food 读整本，按日期摊开成 FOOD_FILE 一样的结构，不用改吃了吗。
+   本机跑着吃了吗就是 http://127.0.0.1:8770，放在服务器上的是它的 https://…/u/<暗号>。没设或连不上就读 FOOD_FILE。 */
+const HYE_URL = (process.env.HAVE_YOU_EATEN_URL || "").replace(/\/$/, "");
+const HYE_V = { good: "好吃", meh: "一般", bad: "踩雷" };
+let hyeCache = { at: 0, F: null };
+async function foodBook() {
+  if (!HYE_URL) return readJSON(FOOD_FILE, {});
+  if (hyeCache.F && Date.now() - hyeCache.at < 20000) return hyeCache.F;
+  try {
+    const r = await fetch(HYE_URL + "/api/food"); if (!r.ok) throw new Error("http " + r.status);
+    const B = await r.json();
+    const shop = new Map((B.shops || []).map(s => [s.id, s])), br = new Map((B.branches || []).map(b => [b.id, b])), dish = new Map((B.dishes || []).map(d => [d.id, d])), logs = new Map();
+    for (const l of B.logs || []) { if (!logs.has(l.meal_id)) logs.set(l.meal_id, []); logs.get(l.meal_id).push(l); }
+    const F = {};
+    for (const m of [...(B.meals || [])].reverse()) {   // 它给的是新的在前，摊开时按先后
+      const b = br.get(m.branch_id), s = b && shop.get(b.shop_id);
+      const dishes = (logs.get(m.id) || []).map(l => ({ name: l.name || (dish.get(l.dish_id) || {}).name || "", verdict: HYE_V[l.verdict] || "", note: l.note || "" })).filter(d => d.name);
+      (F[m.eaten_on] = F[m.eaten_on] || []).push({ slot: m.slot || "", shop: (s && s.name) || "", place: m.place || (b ? [b.area, b.label].filter(Boolean).join(" ") : ""), time: "", how: m.how || "", dishes, note: m.note || "" });
+    }
+    hyeCache = { at: Date.now(), F }; return F;
+  } catch (e) { console.error("吃了吗连不上，先读 FOOD_FILE：", e.message); return readJSON(FOOD_FILE, {}); }
+}
+
 const TOOL_HOOKS = {
   /* 把本子里说的话写回你们的聊天。你们聊天那一边接一个 HTTP 入口的话，填 TALK_WEBHOOK */
   async sync_talk(args) {
@@ -58,10 +81,10 @@ const TOOL_HOOKS = {
     return { written: (args.turns || []).length };
   },
   /* 「吃了吗」联动（另一个开源项目 github.com/TangfanOVO/have-you-eaten）：本子里「吃了吗」栏和 agent 读原料都走这两个钩子。
-     接了吃了吗的话，用它自己的数据：把下面两段换成读吃了吗的库（或转调它的 MCP 工具 food_days / food_day）。
+     设了 HAVE_YOU_EATEN_URL 就读吃了吗自己的数据（见下面 foodBook），没设读 FOOD_FILE。
      参考实现读 FOOD_FILE：{"2026-09-27":[{slot,shop,place,time,dishes:[{name,verdict,note}],note}]} */
-  async food_days(args) { const F = await readJSON(FOOD_FILE, {}); return { days: Object.keys(F).filter(d => (!args.from || d >= args.from) && (!args.to || d <= args.to)).map(d => ({ date: d, n: [].concat(F[d]).reduce((a, m) => a + ((m && m.dishes) || [1]).length, 0) })) }; },
-  async food_day(args) { const F = await readJSON(FOOD_FILE, {}); return { date: args.date, meals: [].concat(F[args.date] || []) }; },
+  async food_days(args) { const F = await foodBook(); return { days: Object.keys(F).filter(d => (!args.from || d >= args.from) && (!args.to || d <= args.to)).map(d => ({ date: d, n: [].concat(F[d]).reduce((a, m) => a + ((m && m.dishes) || [1]).length, 0) })) }; },
+  async food_day(args) { const F = await foodBook(); return { date: args.date, meals: [].concat(F[args.date] || []) }; },
   /* 颜文字库：KAOMOJI_FILE（默认 sources/kaomoji.json）。字符串数组就行；也可以直接指向 fuyue-kaomoji-drawer 的库
      （~/.fuyue-kaomoji/kaomoji.json，或它仓库里的 catalog/kaomoji.json），按分类挑。没有就是空的 */
   async get_kaomoji(args = {}) { const raw = await readJSON(process.env.KAOMOJI_FILE || path.join(DATA, "sources", "kaomoji.json"), []);
@@ -207,6 +230,10 @@ http.createServer(async (req, res) => {
       return ok(res, 200, await TOOL_HOOKS[name](body.args || {}));
     }
     if (rest.startsWith("sources/")) return ok(res, 200, await sources(rest.slice(8)));
+    const raw = rest.match(/^photos\/(.+)\/raw$/);   // 给 agent 看一眼相册里的原图，不放进本子
+    if (raw && req.method === "GET") { const idx = await readJSON(PHOTO_INDEX, []); const p = idx.find(x => (x.id || x.file) === raw[1]);
+      if (!p || !p.jpg) return ok(res, 404, { error: "no jpg for this photo" });
+      res.writeHead(200, { "Content-Type": "image/jpeg", "Cache-Control": "no-store" }); return fss.createReadStream(path.join(PHOTO_DIR, p.jpg)).pipe(res); }
     const m = rest.match(/^photos\/(.+)\/publish$/);
     if (m && req.method === "POST") { const a = await publishPhoto(m[1]); return a ? ok(res, 200, a) : ok(res, 404, { error: "no jpg for this photo" }); }
     return ok(res, 404, { error: "not found" });

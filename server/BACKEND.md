@@ -96,7 +96,7 @@ JOURNAL_TOKEN=换成一串随机字 node journal-server.mjs
 | `food_day` | `{date:"2026-09-27"}` | `{date, meals:[{slot:"午饭", shop:"德国村", place, time:"14:18", dishes:[{name:"猪肘", verdict:"好吃", note:"奶味好重"}], note}]}` |
 
 - `verdict` 用吃了吗自己的三档：好吃 / 一般 / 踩雷；`note` 是记的时候写下的原话，原样带过来，页面不改字。
-- 接法：吃了吗现有的工具（`food_book` / `food_note` / `food_rate` / `food_taste` / `food_dice` / `food_page`）是按「最近几天」看的，请在吃了吗里加这两个按日期取的只读工具，`journal-server.mjs` 里的 `TOOL_HOOKS.food_days` / `food_day` 改成转调它们就行。参考实现先读 `FOOD_FILE`（吃了吗的导出，同样的结构）。
+- 接法：参考后端设 `HAVE_YOU_EATEN_URL`（本机跑着吃了吗就是 `http://127.0.0.1:8770`，放在服务器上的就是它的 `https://…/u/<暗号>`），`food_days` / `food_day` 就从吃了吗的 `GET /api/food` 按日期摊开，不用改吃了吗。没设、或者连不上，就读 `FOOD_FILE`（同样的结构）。
 - agent 读原料时 `journal_sources` 里的 `food` 也是从 `food_day` 来的，写 `day/<日期>` 时把挑中的几样填进 `food:{meal, at, t, items:[[菜, 评价]], q}`。
 - 在 claude.ai 里打开的版本连不到吃了吗（它在你自己的机器上），那里只显示演示数据。
 
@@ -127,12 +127,13 @@ agent 是跟她一起过日子、有记忆的那个 AI，不是一个没记忆�
 - **照片**：你的相册在哪就从哪读。每张要有拍摄时间、经纬度、光圈、快门、ISO、焦距；**原图才有 EXIF**，压缩过、截图、别的 App 存下来的通常没有，那就留空，别编。本子里「交给」传的照片，页面会在缩小之前从原图读出这些（JPEG、HEIC 都读），放进 `ask` 的 `photo_meta`，参考后端的 sources 会把它们并进那天的照片。
   参考实现读 `sources/photos.json`（格式：`[{id, local:"2026-09-27 10:39", lat, lon, f, shutter, iso, focal, model, jpg}]`，`jpg` 是转好的 JPEG 文件名，HEIC 要先转）。
 - **聊天**：按日期取原话，不改字。参考实现读 `sources/chat.json`。
-- **吃了吗**：参考实现读 `sources/food.json`，装了吃了吗就换成那边的。
+- **吃了吗**：参考实现读 `sources/food.json`，装了吃了吗就设 `HAVE_YOU_EATEN_URL`，见上面「联动吃了吗」。
 - **天气**：有 GPS 就用 open-meteo 的历史接口补（免费，不用 key）。
 - **书摘**（可选）：那天一起读书时引的原文和说的话、读书 App 里的划线。参考实现读 `sources/book.json`（`{"2026-09-27":[{book, author, ch, quote, note, who:"her"|"me", t}]}`），没有就是空的。
 - **健康**（可选）：那天的步数、睡眠、作息、心率之类。参考实现读 `sources/health.json`（`{"2026-09-27":[{k, n 显示的名字, v 数, s 显示的样子}]}`），没有就是空的。心情、经期这类私密的别放进来。
 
 `POST /photos/<id>/publish` → `{id, url}`：把相册里的一张放进本子，**只放要用的几张**。
+`GET /photos/<id>/raw` → 那张原图：给 agent 先看一眼再挑，不放进本子。
 
 ### 写回一页：`day/<日期>`
 
@@ -197,7 +198,7 @@ agent 只给原料，**路线、快门条、坐标、邮戳、哪些零件该藏
 他下次读 journal_read_page(9.27) 就知道她改了什么、说了什么
 ```
 
-`journal-mcp.mjs` 已经把上面这些包成工具：`journal_sources`、`journal_publish_photo`、`journal_progress`、`journal_write_day`、`journal_read_page`、`journal_reply_note`、`journal_asks`。
+`journal-mcp.mjs` 已经把上面这些包成工具：`journal_sources`、`journal_publish_photo`、`journal_progress`、`journal_write_day`、`journal_read_page`、`journal_reply_note`、`journal_asks`，还有看照片的 `journal_look_photo`、列版式风格的 `journal_kit`、自己留批注的 `journal_add_note`。
 你那边已经有自己的 MCP 服务的话，把这几个工具照抄进去（**名字和参数别改**，AGENT.md 是照着这套写的）。
 
 ```bash
