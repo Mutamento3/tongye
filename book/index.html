@@ -3089,5 +3089,61 @@ window.askUp=function(k,file,PH,rerender){PH[k]="data:image/gif;base64,R0lGODlhA
   if(typeof ASSETS!=="undefined"&&ASSETS){try{var a=await ASSETS.upload(sm.blob);if(a&&a.url){PH[k]=a.url;try{rerender()}catch(e){}}}catch(e){}}});
  window.__askUp.set(k,p);return p};
 </script>
+<style>/* 删掉这一页（1018） */.delbox{display:flex;flex-direction:column;gap:10px;margin-top:6px;padding-top:16px;border-top:1px dashed var(--line);text-align:center}.delbox h4{margin:4px 0 0;font-family:var(--serif);font-weight:600;font-size:15px}.delbox .hint{margin:0}.delbox .gen{text-align:left}</style><script>/* 删掉这一页（1018） */(function(){
+var KEEP=30*864e5;
+function nm(w){try{return NM(w)}catch(e){return w==="me"?"枫":"幡"}}
+function fmt(t){var d=new Date(t);return (d.getMonth()+1)+"."+d.getDate()+" "+String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")}
+async function grab(k){var db=window.__jdb,snap={day:k,at:Date.now(),docs:{},local:{}};
+ ["journalPage:","journalGens:","journalNotes:"].forEach(function(p){var v=localStorage.getItem(p+k);if(v!=null)snap.local[p+k]=v});
+ if(db){for(var c of ["day","page","gens"]){try{var s=await db.collection(c).doc(k).get();if(s.exists)snap.docs[c+"/"+k]=s.data()}catch(e){}}
+  try{var q=await db.collection("notes").where("day","==",k).get();q.docs.forEach(function(d){snap.docs["notes/"+d.id]=d.data()})}catch(e){}}
+ else{try{var D=JSON.parse(localStorage.getItem("journalDays")||"{}");if(D[k])snap.local.__day=D[k]}catch(e){}}
+ return snap}
+function hasAny(s){return Object.keys(s.docs).length||Object.keys(s.local).length}
+/* 真有东西：我排过、她贴过（系统自己盖的那枚章不算）、打过字、藏过零件、存过几代、有批注 —— 只盖了章的空白页不算 */
+function worth(s){if(s.docs["day/"+s.day]||s.local.__day)return true;var pg=s.docs["page/"+s.day];try{if(!pg&&s.local["journalPage:"+s.day])pg=JSON.parse(s.local["journalPage:"+s.day])}catch(e){}
+ if(pg&&((pg.stk||[]).some(function(o){return !o.me1})||(pg.hide||[]).length||pg.ext))return true;
+ if(Object.keys(s.docs).some(function(p){return p.indexOf("notes/")===0||p.indexOf("gens/")===0}))return true;
+ try{if(JSON.parse(s.local["journalGens:"+s.day]||"[]").length||JSON.parse(s.local["journalNotes:"+s.day]||"[]").length)return true}catch(e){}return false}
+async function toTrash(k,onlyWorth){var snap=await grab(k);if(!hasAny(snap)||(onlyWorth&&!worth(snap)))return false;var db=window.__jdb;
+ if(db){await db.collection("trash").doc(k+"_"+Date.now().toString(36)).set(snap);
+  for(var p of Object.keys(snap.docs)){var i=p.indexOf("/");try{await db.collection(p.slice(0,i)).doc(p.slice(i+1)).delete()}catch(e){}}}
+ else{var T=[];try{T=JSON.parse(localStorage.getItem("journalTrash")||"[]")}catch(e){}snap.id=k+"_"+Date.now().toString(36);T.push(snap);localStorage.setItem("journalTrash",JSON.stringify(T));
+  try{var D=JSON.parse(localStorage.getItem("journalDays")||"{}");delete D[k];localStorage.setItem("journalDays",JSON.stringify(D))}catch(e){}}
+ Object.keys(snap.local).forEach(function(x){if(x.indexOf("journal")===0)localStorage.removeItem(x)});return true}
+function hush(){try{clearTimeout(saveP)}catch(e){}try{pDirty=false}catch(e){}try{restoring=true}catch(e){}}   /* 删的时候别让还没存的那一下把页又写回去 */
+window.delPage=async function(k){hush();try{await toTrash(k)}catch(e){try{restoring=false;toast("没删成，网断了？")}catch(_){}return}
+ try{toast("删掉了 · 30 天内能在「存」最底下找回")}catch(e){}setTimeout(function(){location.reload()},900)};
+async function trashList(){var db=window.__jdb,L=[];
+ if(db){try{var q=await db.collection("trash").get();L=q.docs.map(function(d){return Object.assign({id:d.id},d.data())})}catch(e){}}
+ else{try{L=JSON.parse(localStorage.getItem("journalTrash")||"[]")}catch(e){}}
+ var now=Date.now(),old=L.filter(function(t){return now-(t.at||0)>KEEP});
+ if(old.length){if(db)old.forEach(function(t){try{db.collection("trash").doc(t.id).delete()}catch(e){}});
+  else try{localStorage.setItem("journalTrash",JSON.stringify(L.filter(function(t){return now-(t.at||0)<=KEEP})))}catch(e){}}
+ return L.filter(function(t){return now-(t.at||0)<=KEEP}).sort(function(a,b){return b.at-a.at})}
+window.restoreTrash=async function(id){var db=window.__jdb,t=null,L=await trashList();t=L.find(function(x){return x.id===id});if(!t)return;var k=t.day;hush();
+ try{await toTrash(k,true)}catch(e){}   /* 那天已经又有新的一页：真有东西就先挪进废纸篓，谁都不丢；只盖了章的空白页直接盖掉 */
+ if(db){for(var p of Object.keys(t.docs||{})){var i=p.indexOf("/");await db.collection(p.slice(0,i)).doc(p.slice(i+1)).set(t.docs[p])}await db.collection("trash").doc(id).delete()}
+ else{try{var D=JSON.parse(localStorage.getItem("journalDays")||"{}");if(t.local&&t.local.__day)D[k]=t.local.__day;localStorage.setItem("journalDays",JSON.stringify(D))}catch(e){}
+  try{var T=JSON.parse(localStorage.getItem("journalTrash")||"[]").filter(function(x){return x.id!==id});localStorage.setItem("journalTrash",JSON.stringify(T))}catch(e){}}
+ Object.keys(t.local||{}).forEach(function(x){if(x.indexOf("journal")===0)localStorage.setItem(x,t.local[x])});
+ try{toast(k+" 找回来了")}catch(e){}setTimeout(function(){location.reload()},900)};
+async function renderDel(){var pg=document.querySelector("#saveS .cfgpage");if(!pg)return;var box=document.getElementById("delBox");
+ if(!box){box=document.createElement("div");box.id="delBox";box.className="delbox";pg.appendChild(box)}
+ var k=(typeof PAGE_DAY!=="undefined")?PAGE_DAY:"";
+ box.innerHTML='<h4>这一页</h4><p class="hint">删掉以后 '+k+' 是一张空白页，能交给'+esc(nm("me"))+'重新排，也能自己拼。'+esc(nm("me"))+'排的、你贴的、打的字、批注和存过的几代都先挪进废纸篓，30 天内能找回。</p>'
+  +'<div class="savebig" id="delAsk"><button class="tap" id="delPageBtn">删掉 '+k+' 这一页</button></div>'
+  +'<div class="savebig" id="delSure" hidden><button class="tap go" id="delYes">真的删掉</button><button class="tap" id="delNo">算了</button></div>'
+  +'<h4>最近删掉的</h4><div class="gens" id="trashList"><p class="hint">翻一下…</p></div>';
+ box.querySelector("#delPageBtn").onclick=function(){box.querySelector("#delAsk").hidden=true;box.querySelector("#delSure").hidden=false;try{buzz(6)}catch(e){}};
+ box.querySelector("#delNo").onclick=function(){box.querySelector("#delSure").hidden=true;box.querySelector("#delAsk").hidden=false};
+ box.querySelector("#delYes").onclick=function(){this.disabled=true;delPage(k)};
+ var L=await trashList(),tl=box.querySelector("#trashList");
+ tl.innerHTML=L.length?L.map(function(t){return '<div class="gen"><span class="n">'+esc(t.day||"")+'</span><span class="m">删于 '+fmt(t.at)+'</span><button class="tap" data-tr="'+esc(t.id)+'">找回</button></div>'}).join(""):'<p class="hint">没有。</p>';
+ tl.querySelectorAll("[data-tr]").forEach(function(b){b.onclick=function(){b.disabled=true;restoreTrash(b.dataset.tr)}})}
+window.renderDel=renderDel;
+var sv=document.getElementById("saveS"),was=false;   /* 抽屉一打开就画（不包 openSave：按钮可能一开始就记住了原来那个） */
+if(sv)new MutationObserver(function(){var on=sv.classList.contains("on");if(on&&!was){try{renderDel()}catch(e){}}was=on}).observe(sv,{attributes:true,attributeFilter:["class"]});
+})();</script>
 </body>
 </html>
