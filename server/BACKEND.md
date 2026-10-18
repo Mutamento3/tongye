@@ -56,7 +56,7 @@ JOURNAL_TOKEN=换成一串随机字 node journal-server.mjs
 | `page` | `9.27` | 她在这页上的改动：贴纸、打的字、放的照片、藏掉的零件 `{stk:[…], hide:[…], ts}` | 页面 |
 | `gens` | `9.27` | 存过的第 N 代 `{list:[…]}`，最多 20 | 页面 |
 | `notes` | 随机 | 批注 `{id, day, who:"her"|"me", text, at, re, b, fx, fy}`，`re` 指向这一串的第一条 | 两边 |
-| `ask` | 随机 | 点「交给枫」留下的请求 `{id, day, text, photos, at, status:"new"|"done"}` | 页面 / agent |
+| `ask` | 随机 | 点「交给枫」留下的请求 `{id, day, text, photos, photo_meta?, at, status:"new"|"done"}`，`photo_meta` 按照片地址给拍摄信息 | 页面 / agent |
 | `cfg` | `main` | 设置：署名、贴纸栏顺序、颜文字增删、贴纸备注和隐藏 | 页面 |
 | `wx` | `9.27` | 手填或 agent 补的天气 `{code, hi, lo, mm, wind, sun, at, src}` | 两边 |
 | `mine` | 随机 | 她传的贴纸和照片 `{id, note, cat, g, kind, w, h, src, asset, day}` | 页面 |
@@ -124,7 +124,7 @@ agent 是跟她一起过日子、有记忆的那个 AI，不是一个没记忆�
 }
 ```
 
-- **照片**：你的相册在哪就从哪读。每张要有拍摄时间、经纬度、光圈、快门、ISO、焦距；**原图才有 EXIF**，压缩过、截图、别的 App 存下来的通常没有，那就留空，别编。
+- **照片**：你的相册在哪就从哪读。每张要有拍摄时间、经纬度、光圈、快门、ISO、焦距；**原图才有 EXIF**，压缩过、截图、别的 App 存下来的通常没有，那就留空，别编。本子里「交给」传的照片，页面会在缩小之前从原图读出这些（JPEG、HEIC 都读），放进 `ask` 的 `photo_meta`，参考后端的 sources 会把它们并进那天的照片。
   参考实现读 `sources/photos.json`（格式：`[{id, local:"2026-09-27 10:39", lat, lon, f, shutter, iso, focal, model, jpg}]`，`jpg` 是转好的 JPEG 文件名，HEIC 要先转）。
 - **聊天**：按日期取原话，不改字。参考实现读 `sources/chat.json`。
 - **吃了吗**：参考实现读 `sources/food.json`，装了吃了吗就换成那边的。

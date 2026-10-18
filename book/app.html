@@ -2476,7 +2476,7 @@ $("#chSend").onclick=async()=>{if(sent)return;const txt=$("#chIn").value.trim();
  const want=/复古|旧|欧式/.test(txt)?["academia","学院手抄","复古一点"]:/热闹|颜文字|可爱/.test(txt)?["memphis","孟菲斯","热闹一点"]:/胶片/.test(txt)?["film","复古胶片","胶片味"]:["qingmo","青墨素纸","下雨天，安静一点"];
  const deco=/热闹|颜文字|复古|装饰|贴/.test(txt);
  await typing(900);await addMe(`收到${ph.length?" "+ph.length+" 张":""}。我先看看照片。`);
- const steps=[[`看照片`,ph.length?`海狮、栈桥、神奇岩石、拱门`:`这天的相册`],[`照片的时间和地点`,`10:40–15:38 · 袋鼠岛`],[`查那天的天气`,`小雨 12–15°C · 风 26 km/h · 来自 open-meteo`],[`从聊天记录里挑拍照前后说的话`,`挑了 6 句，原话不改`],[`选版式和风格`,`单栏流 × ${want[1]} · ${want[2]}`],[`贴几张、留一条批注`,deco?`撒了点装饰，海狮旁边写了一句给你`:`天气章贴在海狮那张角上，旁边写了一句给你`]];
+ const steps=[[`看照片`,ph.length?`海狮、栈桥、神奇岩石、拱门`:`这天的相册`],[`照片的时间和地点`,(window.__metaLine&&__metaLine(ph))||`10:40–15:38 · 袋鼠岛`],[`查那天的天气`,`小雨 12–15°C · 风 26 km/h · 来自 open-meteo`],[`从聊天记录里挑拍照前后说的话`,`挑了 6 句，原话不改`],[`选版式和风格`,`单栏流 × ${want[1]} · ${want[2]}`],[`贴几张、留一条批注`,deco?`撒了点装饰，海狮旁边写了一句给你`:`天气章贴在海狮那张角上，旁边写了一句给你`]];
  const log=await addMe(`<div class="log" id="lg"></div><div class="tm">${nmMe()} · 在排</div>`,300);
  for(const [a,b] of steps){const r=document.createElement("div");r.className="r run";r.innerHTML=`<i></i><span><b>${a}</b><small>${b}</small></span>`;log.querySelector(".log").appendChild(r);scrollEnd();await wait(700+Math.random()*500);r.className="r ok";buzz(3)}
  await typing(800);
@@ -2668,7 +2668,7 @@ try{const L=JSON.parse(localStorage.getItem("journalDays")||"{}"),ks=Object.keys
 
 /* 真的交给枫：写一张 ask/<id>，再往家里说一声；那边的 agent 做的时候往 day/<日期>.steps 写进度，这里跟着亮 */
 async function liveAsk(txt,ph){try{await Promise.all(ph.map(x=>window.__askUp&&window.__askUp.get(x)).filter(Boolean))}catch(e){}const db=window.__jdb;const id="a"+Date.now().toString(36);const k=day;
- const req={id,day:k,text:txt,photos:ph.map(x=>PH[x]||x).filter(x=>!/^(data|blob):/.test(String(x))),at:Date.now(),who:"her",status:"new"};
+ const req={id,day:k,text:txt,photos:ph.map(x=>PH[x]||x).filter(x=>!/^(data|blob):/.test(String(x))),at:Date.now(),who:"her",status:"new"};{const M={};ph.forEach(x=>{const u=PH[x]||x,m=window.__askMeta&&window.__askMeta[x];if(m&&req.photos.includes(u))M[u]=m});if(Object.keys(M).length)req.photo_meta=M}
  if(req.photos.length<ph.length)try{toast(`有 ${ph.length-req.photos.length} 张没传上去，${nmMe()}这次看不到，换个网再发一次`)}catch(e){}try{db&&await db.collection("ask").doc(id).set(req)}catch(e){}
  try{const mcp=await claude.use("mcp");await mcp.callTool("连环","sync_talk",{turns:[{who:"她",text:`〔手帐〕帮我做 ${k} 的日记${txt?"："+txt:""}`}]},{cache:false})}catch(e){}
  await addMe(`收到，我去翻 ${k} 的相册和聊天，做好了这里会亮。`,500);
@@ -3016,11 +3016,11 @@ U.last=snapNow();U.quiet=Date.now()+2500;U.day=(typeof PAGE_DAY!=="undefined")?P
 })();</script>
 <script>/* 交给枫：传的照片真的传上去（1018） */
 window.__askUp=new Map();
-/* 一张一张排队：家里读拍摄信息的那段（inject.js 的 __bzExif）只有一个格子，几张同时压同时传，信息会对错图 */
+/* 一张一张排队，几张同时压同时传容易乱 */
 window.__askChain=Promise.resolve();
 window.askUp=function(k,file,PH,rerender){PH[k]="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
  var heic=/heic|heif/i.test((file.type||"")+" "+(file.name||""));
- /* (1018) 家里收 HEIC：整张原图传上去，服务器转 JPEG、读拍摄信息；这边先不压（一压信息就没了） */
+ /* (1018) 后端说自己收 HEIC（window.__bzHeic=true）时：整张原图传上去，后端转 JPEG；这边先不压 */
  if(heic&&window.__bzHeic&&typeof ASSETS!=="undefined"&&ASSETS){var hp=window.__askChain=window.__askChain.then(async function(){
    try{window.__bzExif=null;var a=await ASSETS.upload(file);if(a&&a.url){PH[k]=a.url;try{rerender()}catch(e){}}else throw new Error(a&&a.error||"没传上")}
    catch(e){try{toast("这张 HEIC 没传上去，换个网再试")}catch(_){}}});window.__askUp.set(k,hp);return hp}
@@ -3087,5 +3087,47 @@ var sv=document.getElementById("saveS"),was=false;   /* 抽屉一打开就画（
 if(sv)new MutationObserver(function(){var on=sv.classList.contains("on");if(on&&!was){try{renderDel()}catch(e){}}was=on}).observe(sv,{attributes:true,attributeFilter:["class"]});
 })();</script>
 <style>/* 照片栏看得见的就是要发的（1018） */.att .ap{flex:none;width:56px;height:56px;border-radius:12px;overflow:hidden;position:relative;background:var(--chip)}.att .ap img{width:100%;height:100%;object-fit:cover;display:block}.att .ax{position:absolute;right:0;top:0;width:32px;height:32px;padding:0;border:0;background:none;display:grid;place-items:center;cursor:pointer}.att .ax i{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;background:rgba(23,24,26,.56);color:#fff;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);transform:translate(4px,-4px)}.att .ax svg{width:10px;height:10px}</style>
+<script>/* 交给的时候读原图的拍摄信息（1018）：缩图之前读，读不出来就算了，不编 */
+(function(){
+function tiff(v,t){var le=v.getUint16(t)===0x4949,SZ={1:1,2:1,3:2,4:4,5:8,7:1,9:4,10:8};
+ function u16(p){return v.getUint16(p,le)}function u32(p){return v.getUint32(p,le)}
+ function one(ty,p){if(ty===3)return u16(p);if(ty===4)return u32(p);if(ty===9)return v.getInt32(p,le);
+  if(ty===5){var d=u32(p+4);return d?u32(p)/d:null}if(ty===10){var e=v.getInt32(p+4,le);return e?v.getInt32(p,le)/e:null}return v.getUint8(p)}
+ function val(ty,n,p){if(p+(SZ[ty]||1)*n>v.byteLength)return null;
+  if(ty===2){var s="";for(var i=0;i<n-1;i++)s+=String.fromCharCode(v.getUint8(p+i));return s.replace(/\0+$/,"").trim()}
+  if(n===1)return one(ty,p);var a=[];for(var j=0;j<Math.min(n,8);j++)a.push(one(ty,p+j*(SZ[ty]||1)));return a}
+ function ifd(p){var o={};if(p+2>v.byteLength)return o;var n=u16(p);
+  for(var i=0;i<n&&p+2+i*12+12<=v.byteLength;i++){var e=p+2+i*12,tag=u16(e),ty=u16(e+2),c=u32(e+4),vp=(SZ[ty]||1)*c>4?t+u32(e+8):e+8;try{o[tag]=val(ty,c,vp)}catch(_){}}return o}
+ var i0=ifd(t+u32(t+4)),ex=i0[0x8769]?ifd(t+i0[0x8769]):{},gp=i0[0x8825]?ifd(t+i0[0x8825]):{},m={};
+ var dt=ex[0x9003]||ex[0x9004]||i0[0x0132];
+ if(typeof dt==="string"&&/^\d{4}:\d\d:\d\d \d\d:\d\d/.test(dt))m.local=dt.slice(0,10).replace(/:/g,"-")+" "+dt.slice(11,16);
+ if(typeof ex[0x9011]==="string")m.offset=ex[0x9011];
+ function dms(a,r){if(!a||a.length<3||a.some(function(x){return x==null||!isFinite(x)}))return null;var d=a[0]+a[1]/60+a[2]/3600;return(r==="S"||r==="W")?-d:d}
+ var lat=dms(gp[2],gp[1]),lon=dms(gp[4],gp[3]);if(lat!=null&&lon!=null&&(lat||lon)){m.lat=+lat.toFixed(6);m.lon=+lon.toFixed(6)}
+ if(ex[0x829D]&&isFinite(ex[0x829D]))m.f=+(+ex[0x829D]).toFixed(1);
+ var et=ex[0x829A];if(et&&isFinite(et))m.shutter=et>=1?String(+et.toFixed(1)):"1/"+Math.round(1/et);
+ var iso=ex[0x8827];if(Array.isArray(iso))iso=iso[0];if(iso)m.iso=iso;
+ if(ex[0x920A]&&isFinite(ex[0x920A]))m.focal=+(+ex[0x920A]).toFixed(2);
+ if(i0[0x0110])m.model=i0[0x0110];if(i0[0x010F])m.make=i0[0x010F];if(ex[0xA434])m.lens=ex[0xA434];
+ return Object.keys(m).length?m:null}
+/* JPEG：文件头里的 APP1；HEIC：整个文件里找 "Exif\0\0" 后面跟着 TIFF 头的那一块 */
+window.__readPhotoMeta=function(file){if(!file||!file.slice)return Promise.resolve(null);
+ return file.slice(0,8*1024*1024).arrayBuffer().then(function(buf){var v=new DataView(buf);if(v.byteLength<12)return null;
+  if(v.getUint16(0)===0xFFD8){var o=2;while(o+10<v.byteLength){var mk=v.getUint16(o),len=v.getUint16(o+2);
+    if(mk===0xFFE1&&v.getUint32(o+4)===0x45786966)return tiff(v,o+10);if((mk&0xFF00)!==0xFF00)break;o+=2+len}return null}
+  if(v.getUint32(4)===0x66747970){var b=new Uint8Array(buf);for(var i=8;i+14<b.length;i++){
+    if(b[i]===0x45&&b[i+1]===0x78&&b[i+2]===0x69&&b[i+3]===0x66&&b[i+4]===0&&b[i+5]===0){var h=v.getUint32(i+6);
+     if(h===0x4D4D002A||h===0x49492A00){try{return tiff(v,i+6)}catch(e){return null}}}}}
+  return null}).catch(function(){return null})};
+window.__askMeta={};
+var up=window.askUp;
+if(up)window.askUp=function(k,file){var mp=window.__readPhotoMeta(file).then(function(m){if(m)window.__askMeta[k]=m});
+ var p=up.apply(this,arguments),both=Promise.all([p,mp]);try{window.__askUp.set(k,both)}catch(e){}return both};
+/* 演示版：读到的写进「照片的时间和地点」那一步，让人看见是从自己的照片里读的 */
+window.__metaLine=function(ph){var M=(ph||[]).map(function(k){return window.__askMeta[k]}).filter(Boolean);if(!M.length)return "";
+ var t=M.map(function(m){return m.local&&m.local.slice(11,16)}).filter(Boolean).sort(),g=M.filter(function(m){return m.lat!=null}).length;
+ return (t.length?(t[0]===t[t.length-1]?t[0]:t[0]+"–"+t[t.length-1])+" · ":"")+(g?g+" 张有坐标":"没有坐标")+" · 从你的原图里读的"};
+})();
+</script>
 </body>
 </html>

@@ -116,6 +116,13 @@ async function checkWords(k, doc) {
 async function sources(date) {
   const idx = await readJSON(PHOTO_INDEX, []);
   const photos = idx.filter(p => String(p.local || "").startsWith(date)).map(p => ({ id: p.id || p.file, t: String(p.local).slice(11, 16), lat: p.lat ?? null, lon: p.lon ?? null, f: p.f ?? null, shutter: p.shutter ?? null, iso: p.iso ?? null, focal: p.focal ?? null, model: p.model ?? null, kind: p.kind || "照片", has_jpg: !!p.jpg }));
+  // 本子里「交给」时传的照片：页面在缩图前从原图读的拍摄信息，跟着请求存在 ask 的 photo_meta 里（按照片地址）
+  try { const dir = path.join(DATA, "kv", "ask");
+    for (const f of (await fs.readdir(dir)).filter(x => x.endsWith(".json"))) { const a = await readJSON(path.join(dir, f)); if (!a || !a.photo_meta) continue;
+      for (const [src, m] of Object.entries(a.photo_meta)) if (m && String(m.local || "").startsWith(date) && !photos.some(p => p.src === src))
+        photos.push({ id: src, src, t: String(m.local).slice(11, 16), lat: m.lat ?? null, lon: m.lon ?? null, f: m.f ?? null, shutter: m.shutter ?? null, iso: m.iso ?? null, focal: m.focal ?? null, model: m.model ?? null, kind: "照片", has_jpg: false }); }
+  } catch {}
+  photos.sort((a, b) => String(a.t).localeCompare(String(b.t)));
   const chat = ((await readJSON(CHAT_FILE, {}))[date]) || [];
   const food = (await TOOL_HOOKS.food_day({ date })).meals;   // 吃了吗里那天记过的每一顿
   let wx = null;

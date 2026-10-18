@@ -16,7 +16,7 @@
 10. **写回**：`journal_write_day(date, page)`。`geo` 和 `shots` 给那天**所有**照片的（路线和快门条才完整），`photos` 只放用到的。
 11. **留一句**（可选）：在你最想说点什么的那块旁边留批注：`notes/<id> = {day, who:"me", text, at, re:null, b:零件id, fx, fy}`。
     零件 id：sp 书脊、ti 标题、wx 天气、p1 正文、he 主照片、ro 路线、sh 截图、p2 截图说明、qu 引言、pa 双联照、an 照片批注、pe 红笔、su 快门条、tk 小票、en 邮戳。
-12. 她是在本子里点「交给枫」来的话，`journal_asks()` 里有那张请求，做完用 `done_id` 关掉。
+12. 她是在本子里点「交给枫」来的话，`journal_asks()` 里有那张请求，做完用 `done_id` 关掉。请求里的 `photo_meta` 是她传的每张照片的拍摄信息（时间、经纬度、光圈快门），写 `photos[]` 时照抄；没有坐标就不给 geo。
 
 ## 她改过之后
 - `journal_read_page(date)`：她贴了什么、**自己打了什么字**（`stk` 里 `c:"text"` 的 `m`）、放了哪些照片（`c:"pic"`）、藏了哪些零件（`hide`）、留了什么批注。

@@ -15,7 +15,7 @@ const kv = { get: p => api("GET", "/kv/" + p), set: (p, d) => api("PUT", "/kv/" 
 const dayKey = d => { const m = String(d).match(/(\d{4})-(\d{1,2})-(\d{1,2})/); return m ? `${+m[2]}.${+m[3]}` : String(d); };
 
 const TOOLS = [
-  { name: "journal_sources", description: "读某一天做手帐的原料：那天相册里每张照片的时间、经纬度、光圈快门 ISO 焦距（不含图本身），聊天原话，吃了吗，天气，还有那天的书摘（book）和身体数据（health），有就给。先调这个再决定用哪几张。",
+  { name: "journal_sources", description: "读某一天做手帐的原料：那天相册里每张照片的时间、经纬度、光圈快门 ISO 焦距（不含图本身），聊天原话，吃了吗，天气，还有那天的书摘（book）和身体数据（health），有就给。她在「交给」里传过、读得到拍摄时间的照片也在 photos 里，带 src，已经在本子里了，不用 publish。先调这个再决定用哪几张。",
     inputSchema: { type: "object", properties: { date: { type: "string", description: "YYYY-MM-DD" } }, required: ["date"] },
     run: a => api("GET", "/sources/" + a.date) },
   { name: "journal_publish_photo", description: "把相册里的一张照片放进本子（传成图片资源），返回 {url}。写 day 的 photos[].src 就用这个 url。只放要用的几张。",
@@ -38,7 +38,7 @@ const TOOLS = [
     inputSchema: { type: "object", properties: { note_id: { type: "string" }, text: { type: "string" } }, required: ["note_id", "text"] },
     run: async a => { const root = await kv.get("notes/" + a.note_id); if (!root) throw new Error("没有这条批注"); const id = "n" + Date.now().toString(36);
       await kv.set("notes/" + id, { id, day: root.day, who: "me", at: Date.now(), re: root.re || root.id, text: a.text }); return { ok: 1, id }; } },
-  { name: "journal_asks", description: "看她在本子里点「交给枫」留下的请求（还没做的）。做完调 journal_write_day 后再用 done=true 关掉。",
+  { name: "journal_asks", description: "看她在本子里点「交给枫」留下的请求（还没做的）。photos 是她这次传的照片地址；photo_meta 按地址给每张的拍摄时间、经纬度、光圈快门（页面缩图前从原图读的，没有就是读不到），写 day 的 photos[] 原样照抄，没有的别编。做完调 journal_write_day 后再用 done=true 关掉。",
     inputSchema: { type: "object", properties: { done_id: { type: "string", description: "要关掉的请求 id，可选" } } },
     run: async a => { if (a.done_id) { const r = await kv.get("ask/" + a.done_id); if (r) await kv.set("ask/" + a.done_id, { ...r, status: "done" }); }
       return ((await kv.list("ask")) || []).map(r => r.data).filter(x => x && x.status !== "done"); } }

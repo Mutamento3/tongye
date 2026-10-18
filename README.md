@@ -38,7 +38,7 @@ claude mcp add journal -e JOURNAL_URL=http://localhost:8787 -e JOURNAL_TOKEN=同
 
 在 claude.ai 里打开 `book/app.html` 的话，页面用 Claude 自己的存储，调工具时找的连接器名叫「连环」（作者家里那个），换成你自己的连接器名就行，搜 `callTool("连环"` 那几处。
 
-照片、聊天记录、吃了什么、读书时的书摘、那天的步数睡眠从哪来，`BACKEND.md` 第二节写了格式，书摘和健康没有也行。参考后端先读 `server/journal-data/sources/` 里的几个 JSON，换成你自己的数据源就行。吃的那一栏能接 [吃了吗](https://github.com/TangfanOVO/have-you-eaten)。
+照片、聊天记录、吃了什么、读书时的书摘、那天的步数睡眠从哪来，`BACKEND.md` 第二节写了格式，书摘和健康没有也行。在本子里点「交给」传的照片，页面会在缩小之前从原图读出拍摄时间、经纬度、光圈快门（JPEG、HEIC 都读），跟着请求一起交给 agent；截图和聊天软件存下来的图一般读不到。参考后端先读 `server/journal-data/sources/` 里的几个 JSON，换成你自己的数据源就行。吃的那一栏能接 [吃了吗](https://github.com/TangfanOVO/have-you-eaten)。
 
 ## 页面和 agent 都守的几条
 
