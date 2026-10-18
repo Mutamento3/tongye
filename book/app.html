@@ -2458,8 +2458,8 @@ function renderChat(){sent=false;sel=new Set((PHOTOS[day]||[]).slice(0,4));$("#c
  $("#chips").innerHTML=["安安静静的","复古一点","热闹一点，多贴点颜文字","第一张放大"].map(t=>`<button class="tap">${t}</button>`).join("");
  $$("#chips button").forEach(b=>b.onclick=()=>{const ta=$("#chIn");ta.value=(ta.value?ta.value+"，":"")+b.textContent;ta.focus();fit()});
  renderAtt();$("#chIn").value="帮我把这天排成一页";fit()}
-function renderAtt(){const ph=PHOTOS[day]||[];$("#att").innerHTML=ph.map(k=>`<label class="${sel.has(k)?"on":""}"><input type="checkbox" ${sel.has(k)?"checked":""} data-p="${k}"><img alt="" src="${PH[k]||k}"></label>`).join("")+`<label style="display:grid;place-items:center;background:var(--paper);box-shadow:inset 0 0 0 1.5px var(--line);color:var(--mute)"><input type="file" accept="image/*" multiple id="attFile">${ICON_PLUS}</label>`;
- $$("#att [data-p]").forEach(c=>c.onchange=()=>{c.checked?sel.add(c.dataset.p):sel.delete(c.dataset.p);c.parentElement.classList.toggle("on",c.checked);buzz(3)});
+function renderAtt(){const ph=[...sel];$("#att").innerHTML=ph.map(k=>`<span class="ap"><img alt="" src="${PH[k]||k}"><button class="ax tap" type="button" data-x="${k}" aria-label="这张不发"><i><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5.5 5.5l9 9M14.5 5.5l-9 9"/></svg></i></button></span>`).join("")+`<label style="display:grid;place-items:center;background:var(--paper);box-shadow:inset 0 0 0 1.5px var(--line);color:var(--mute)"><input type="file" accept="image/*" multiple id="attFile">${ICON_PLUS}</label>`;
+ $$("#att [data-x]").forEach(b=>b.onclick=e=>{e.preventDefault();const k=b.dataset.x;sel.delete(k);if(/^u\d/.test(k)&&PHOTOS[day]){const i=PHOTOS[day].indexOf(k);if(i>=0)PHOTOS[day].splice(i,1)}buzz(3);renderAtt()});
  const f=$("#attFile");if(f)f.onchange=()=>{[...f.files].slice(0,6).forEach((x,i)=>{const k="u"+Date.now()+i;(PHOTOS[day]=PHOTOS[day]||[]).push(k);sel.add(k);if(window.askUp)askUp(k,x,PH,renderAtt);else PH[k]=URL.createObjectURL(x)});renderAtt()}}
 const ICON_PLUS='<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M10 4v12M4 10h12"/></svg>';const ICON_CHEV='<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M8 5l5 5-5 5"/></svg>';
 $("#attBtn").onclick=()=>{const a=$("#att");a.style.display=a.style.display==="none"?"":"none"};
@@ -3086,5 +3086,6 @@ window.renderDel=renderDel;
 var sv=document.getElementById("saveS"),was=false;   /* 抽屉一打开就画（不包 openSave：按钮可能一开始就记住了原来那个） */
 if(sv)new MutationObserver(function(){var on=sv.classList.contains("on");if(on&&!was){try{renderDel()}catch(e){}}was=on}).observe(sv,{attributes:true,attributeFilter:["class"]});
 })();</script>
+<style>/* 照片栏看得见的就是要发的（1018） */.att .ap{flex:none;width:56px;height:56px;border-radius:12px;overflow:hidden;position:relative;background:var(--chip)}.att .ap img{width:100%;height:100%;object-fit:cover;display:block}.att .ax{position:absolute;right:0;top:0;width:32px;height:32px;padding:0;border:0;background:none;display:grid;place-items:center;cursor:pointer}.att .ax i{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;background:rgba(23,24,26,.56);color:#fff;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);transform:translate(4px,-4px)}.att .ax svg{width:10px;height:10px}</style>
 </body>
 </html>
