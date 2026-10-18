@@ -2458,9 +2458,9 @@ function renderChat(){sent=false;sel=new Set((PHOTOS[day]||[]).slice(0,4));$("#c
  $("#chips").innerHTML=["安安静静的","复古一点","热闹一点，多贴点颜文字","第一张放大"].map(t=>`<button class="tap">${t}</button>`).join("");
  $$("#chips button").forEach(b=>b.onclick=()=>{const ta=$("#chIn");ta.value=(ta.value?ta.value+"，":"")+b.textContent;ta.focus();fit()});
  renderAtt();$("#chIn").value="帮我把这天排成一页";fit()}
-function renderAtt(){const ph=PHOTOS[day]||[];$("#att").innerHTML=ph.map(k=>`<label class="${sel.has(k)?"on":""}"><input type="checkbox" ${sel.has(k)?"checked":""} data-p="${k}"><img alt="" src="${PH[k]}"></label>`).join("")+`<label style="display:grid;place-items:center;background:var(--paper);box-shadow:inset 0 0 0 1.5px var(--line);color:var(--mute)"><input type="file" accept="image/*" multiple id="attFile">${ICON_PLUS}</label>`;
+function renderAtt(){const ph=PHOTOS[day]||[];$("#att").innerHTML=ph.map(k=>`<label class="${sel.has(k)?"on":""}"><input type="checkbox" ${sel.has(k)?"checked":""} data-p="${k}"><img alt="" src="${PH[k]||k}"></label>`).join("")+`<label style="display:grid;place-items:center;background:var(--paper);box-shadow:inset 0 0 0 1.5px var(--line);color:var(--mute)"><input type="file" accept="image/*" multiple id="attFile">${ICON_PLUS}</label>`;
  $$("#att [data-p]").forEach(c=>c.onchange=()=>{c.checked?sel.add(c.dataset.p):sel.delete(c.dataset.p);c.parentElement.classList.toggle("on",c.checked);buzz(3)});
- const f=$("#attFile");if(f)f.onchange=()=>{[...f.files].slice(0,6).forEach((x,i)=>{const k="u"+Date.now()+i;PH[k]=URL.createObjectURL(x);(PHOTOS[day]=PHOTOS[day]||[]).push(k);sel.add(k)});renderAtt()}}
+ const f=$("#attFile");if(f)f.onchange=()=>{[...f.files].slice(0,6).forEach((x,i)=>{const k="u"+Date.now()+i;(PHOTOS[day]=PHOTOS[day]||[]).push(k);sel.add(k);if(window.askUp)askUp(k,x,PH,renderAtt);else PH[k]=URL.createObjectURL(x)});renderAtt()}}
 const ICON_PLUS='<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M10 4v12M4 10h12"/></svg>';const ICON_CHEV='<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M8 5l5 5-5 5"/></svg>';
 $("#attBtn").onclick=()=>{const a=$("#att");a.style.display=a.style.display==="none"?"":"none"};
 const fit=()=>{const t=$("#chIn");t.style.height="auto";t.style.height=Math.min(120,t.scrollHeight)+"px"};$("#chIn").addEventListener("input",fit);
@@ -2470,7 +2470,7 @@ function addMe(html,delay=0,cls=""){return new Promise(r=>setTimeout(()=>{const 
 function typing(ms){return new Promise(r=>{const t=document.createElement("div");t.className="mg me";t.innerHTML=`<div class="bub" style="padding:0"><span class="typing"><i></i><i></i><i></i></span></div>`;$("#msgs").appendChild(t);scrollEnd();setTimeout(()=>{t.remove();r()},ms)})}
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 $("#chSend").onclick=async()=>{if(sent)return;const txt=$("#chIn").value.trim();const ph=[...sel];if(!txt&&!ph.length)return;sent=true;buzz(10);
- const m=document.createElement("div");m.className="mg her";m.innerHTML=(ph.length?`<div class="ph ${ph.length===1?"n1":""}">${ph.slice(0,4).map(k=>`<img alt="" src="${PH[k]}">`).join("")}</div>`:"")+(txt?`<div class="bub">${txt.replace(/[<&]/g,c=>c==="<"?"&lt;":"&amp;")}</div>`:"")+`<div class="tm">${nmHer()} · ${now()}</div>`;
+ const m=document.createElement("div");m.className="mg her";m.innerHTML=(ph.length?`<div class="ph ${ph.length===1?"n1":""}">${ph.slice(0,4).map(k=>`<img alt="" src="${PH[k]||k}">`).join("")}</div>`:"")+(txt?`<div class="bub">${txt.replace(/[<&]/g,c=>c==="<"?"&lt;":"&amp;")}</div>`:"")+`<div class="tm">${nmHer()} · ${now()}</div>`;
  $("#msgs").appendChild(m);$("#chIn").value="";fit();$("#att").style.display="none";$("#chips").style.display="none";scrollEnd();
  if(window.journalBackend||window.__jdb){await liveAsk(txt,ph);return}await addMe("这一份还没接后端，"+nmMe()+"收不到。想让 AI 来排，照 README 把后端和 agent 接上；现在可以先回去点「自己拼」。",400);return;
  const want=/复古|旧|欧式/.test(txt)?["academia","学院手抄","复古一点"]:/热闹|颜文字|可爱/.test(txt)?["memphis","孟菲斯","热闹一点"]:/胶片/.test(txt)?["film","复古胶片","胶片味"]:["qingmo","青墨素纸","下雨天，安静一点"];
@@ -2667,9 +2667,9 @@ let SEEN=new Set();try{SEEN=new Set(JSON.parse(localStorage.getItem("journalSeen
 try{const L=JSON.parse(localStorage.getItem("journalDays")||"{}"),ks=Object.keys(L);if(ks.length){ks.forEach(k=>{try{ingestDay(L[k])}catch(e){}});setTimeout(()=>{try{home();making()}catch(e){}},0)}}catch(e){}(()=>{let n=0;const t=setInterval(()=>{const db=window.__jdb;if(!db&&++n<40)return;clearInterval(t);if(!db)return;try{db.collection("notes").onSnapshot(q=>{window.__allNotes=q.docs.map(d=>d.data()).filter(x=>x&&x.text);try{nbox();home()}catch(e){}},()=>{})}catch(e){}},500)})();window.journalBuildDay=buildDay;
 
 /* 真的交给枫：写一张 ask/<id>，再往家里说一声；那边的 agent 做的时候往 day/<日期>.steps 写进度，这里跟着亮 */
-async function liveAsk(txt,ph){const db=window.__jdb;const id="a"+Date.now().toString(36);const k=day;
+async function liveAsk(txt,ph){try{await Promise.all(ph.map(x=>window.__askUp&&window.__askUp.get(x)).filter(Boolean))}catch(e){}const db=window.__jdb;const id="a"+Date.now().toString(36);const k=day;
  const req={id,day:k,text:txt,photos:ph.map(x=>PH[x]||x).filter(x=>!/^(data|blob):/.test(String(x))),at:Date.now(),who:"her",status:"new"};
- try{db&&await db.collection("ask").doc(id).set(req)}catch(e){}
+ if(req.photos.length<ph.length)try{toast(`有 ${ph.length-req.photos.length} 张没传上去，${nmMe()}这次看不到，换个网再发一次`)}catch(e){}try{db&&await db.collection("ask").doc(id).set(req)}catch(e){}
  try{const mcp=await claude.use("mcp");await mcp.callTool("连环","sync_talk",{turns:[{who:"她",text:`〔手帐〕帮我做 ${k} 的日记${txt?"："+txt:""}`}]},{cache:false})}catch(e){}
  await addMe(`收到，我去翻 ${k} 的相册和聊天，做好了这里会亮。`,500);
  const log=await addMe(`<div class="log"></div><div class="tm">${nmMe()} · 在排</div>`,300);
@@ -3014,5 +3014,17 @@ if(typeof window.journalSetDay==="function"){var _sd=window.journalSetDay;window
 ["applyLayout","applyStyle"].forEach(function(n){if(typeof window[n]==="function"){var f=window[n];window[n]=function(){var r=f.apply(this,arguments);setTimeout(applyExt,0);return r}}});
 U.last=snapNow();U.quiet=Date.now()+2500;U.day=(typeof PAGE_DAY!=="undefined")?PAGE_DAY:"";   /* 载入那会儿系统自己盖章，不算一步 */
 })();</script>
+<script>/* 交给枫：传的照片真的传上去（1018） */
+window.__askUp=new Map();
+/* 一张一张排队：家里读拍摄信息的那段（inject.js 的 __bzExif）只有一个格子，几张同时压同时传，信息会对错图 */
+window.__askChain=Promise.resolve();
+window.askUp=function(k,file,PH,rerender){PH[k]="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
+ var heic=/heic|heif/i.test((file.type||"")+" "+(file.name||""));
+ var p=window.__askChain=window.__askChain.then(async function(){var sm;
+  try{sm=await shrinkBig(file)}catch(e){try{toast(heic?"这张是 HEIC，这个浏览器打不开。用 Safari 传，或者先导出成 JPEG":"这张图打不开，换一张试试")}catch(_){}return}
+  PH[k]=sm.data;try{rerender()}catch(e){}
+  if(typeof ASSETS!=="undefined"&&ASSETS){try{var a=await ASSETS.upload(sm.blob);if(a&&a.url){PH[k]=a.url;try{rerender()}catch(e){}}}catch(e){}}});
+ window.__askUp.set(k,p);return p};
+</script>
 </body>
 </html>
