@@ -1883,12 +1883,12 @@ $("#cfgKaoAdd").onclick=()=>{const t=$("#cfgKaoIn").value.trim();if(!t)return;co
 const HOME_MOOD={"坏坏":["坏"],"无奈":["无奈","尴尬","迷惑","捂脸"],"失落":["失落","丑陋","严肃"],"震惊":["震惊","惊讶"],"生气":["生气","傲娇"]};
 async function fetchHomeKao(m0){const mcp=window.claude?await claude.use("mcp").catch(()=>null):null;
  if(!mcp)return "这里连不到家里，要从 Claude 对话里那张卡片打开这页才行";const pool=HOME_MOOD[m0]||[m0];const mood=pool[Math.floor(Math.random()*pool.length)];
- try{const r=await mcp.callTool("连环","get_kaomoji",{mood,count:3},{cache:false});const p=r.payload||{};const n=addKao(m0,Array.isArray(p.kaomoji)?p.kaomoji:[]);return n?`拿到 ${n} 个新的，放进「${m0}」`:"这次拿到的都已经有了，再点一次试试"}
+ try{const r=await mcp.callTool("连环","get_kaomoji",{mood,count:3},{cache:false});const p=(r&&(r.payload||r.structuredContent||r))||{};const n=addKao(m0,Array.isArray(p.kaomoji)?p.kaomoji:[]);return n?`拿到 ${n} 个新的，放进「${m0}」`:"这次拿到的都已经有了，再点一次试试"}
  catch(e){const c=e&&e.code;return c==="server_not_connected"?"没连上「连环」：在 claude.ai 设置 → 连接器里加上":c==="needs_reauth"?"「连环」要重新登录一下":c==="not_in_manifest"||c==="approval_required"?"刚才没允许这页去家里拿，再点一次、点允许就好":c==="server_unavailable"?"家里暂时没应答，过一会儿再点":"没拿到："+(e&&e.message||"出错了")}}
 $("#cfgKaoHome").onclick=async()=>{const msg=$("#cfgKaoMsg");msg.textContent="去家里拿…";msg.textContent=await fetchHomeKao(cfgMood);return;const mcp=null;
  if(!mcp){msg.textContent="这里连不到家里（要在 claude.ai 里打开才行）。可以先手动粘。";return}
  const pool=HOME_MOOD[cfgMood]||[cfgMood];const mood=pool[Math.floor(Math.random()*pool.length)];msg.textContent="去家里拿「"+mood+"」…";
- try{const r=await mcp.callTool("连环","get_kaomoji",{mood,count:3},{cache:false});const p=r.payload||{};const n=addKao(cfgMood,Array.isArray(p.kaomoji)?p.kaomoji:[]);
+ try{const r=await mcp.callTool("连环","get_kaomoji",{mood,count:3},{cache:false});const p=(r&&(r.payload||r.structuredContent||r))||{};const n=addKao(cfgMood,Array.isArray(p.kaomoji)?p.kaomoji:[]);
   msg.textContent=n?`拿到 ${n} 个新的，放进「${cfgMood}」`:"这次拿到的都已经有了，或者显示不出来，再点一次试试"}
  catch(e){const c=e&&e.code;msg.textContent=c==="server_not_connected"?"没连上「连环」：在 claude.ai 设置 → 连接器里加上":c==="needs_reauth"?"「连环」要重新登录一下：claude.ai 设置 → 连接器":c==="not_in_manifest"||c==="approval_required"?"刚才没允许这页去家里拿，点一次再允许就好":c==="server_unavailable"?"家里暂时没应答，过一会儿再点":"没拿到："+(e&&e.message||"出错了")}};
 let hT;const onStampIn=()=>{clearTimeout(hT);hT=setTimeout(()=>{CFG.her=$("#cfgHer").value.trim()||"幡";CFG.me=$("#cfgMe").value.trim()||"枫";saveCfg();applyCfg();const pv=(id,t)=>{const x=stampSVG(t);$(id).innerHTML=x.svg.replace("<svg",'<svg style="width:'+Math.min(64,x.w)+'px"')};pv("#pvHer",CFG.her);pv("#pvMe",CFG.me);renderTray()},300)};

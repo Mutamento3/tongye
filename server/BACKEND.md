@@ -79,7 +79,7 @@ JOURNAL_TOKEN=换成一串随机字 node journal-server.mjs
 `POST /tool/<名字>`，body `{server:"连环", args:{…}}`，返回工具结果。`server` 是页面里写死的名字，参考后端不看它，照收就行。
 
 - `sync_talk` `{turns:[{who:"她"|"我", text}]}`：把批注、批注分享、「帮我做 X 的日记」送回你们平时聊天的地方。**接上这个，跟她聊天的那个 AI 才看得到。**
-- `get_kaomoji` `{mood?, count?}`：你们自己的颜文字库，没有就返回空。
+- `get_kaomoji` `{mood?, count?}`：你们自己的颜文字库，回 `{kaomoji:[…]}`，没有就是空的。参考后端读 `KAOMOJI_FILE`，可以直接指向 [fuyue-kaomoji-drawer](https://github.com/TangfanOVO/fuyue-kaomoji-drawer) 的库，按它的分类挑。
 
 参考实现里 `sync_talk` 先写进 `journal-data/talk.jsonl`；设了 `TALK_WEBHOOK` 就再 POST 给你们聊天的那一边。
 

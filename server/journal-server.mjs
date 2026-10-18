@@ -62,8 +62,14 @@ const TOOL_HOOKS = {
      参考实现读 FOOD_FILE：{"2026-09-27":[{slot,shop,place,time,dishes:[{name,verdict,note}],note}]} */
   async food_days(args) { const F = await readJSON(FOOD_FILE, {}); return { days: Object.keys(F).filter(d => (!args.from || d >= args.from) && (!args.to || d <= args.to)).map(d => ({ date: d, n: [].concat(F[d]).reduce((a, m) => a + ((m && m.dishes) || [1]).length, 0) })) }; },
   async food_day(args) { const F = await readJSON(FOOD_FILE, {}); return { date: args.date, meals: [].concat(F[args.date] || []) }; },
-  /* 颜文字库：读 sources/kaomoji.json，没有就是空的 */
-  async get_kaomoji(args) { const L = await readJSON(path.join(DATA, "sources", "kaomoji.json"), []); return { items: L.slice(0, args && args.limit || 60) }; }
+  /* 颜文字库：KAOMOJI_FILE（默认 sources/kaomoji.json）。字符串数组就行；也可以直接指向 fuyue-kaomoji-drawer 的库
+     （~/.fuyue-kaomoji/kaomoji.json，或它仓库里的 catalog/kaomoji.json），按分类挑。没有就是空的 */
+  async get_kaomoji(args = {}) { const raw = await readJSON(process.env.KAOMOJI_FILE || path.join(DATA, "sources", "kaomoji.json"), []);
+    const L = (Array.isArray(raw) ? raw : raw.items || []).map(x => typeof x === "string" ? { v: x, tags: [] } : { v: x.value || x.kaomoji || x.text || "", tags: [].concat(x.categories || x.tags || x.mood || [], x.label || []) }).filter(x => x.v);
+    const tagged = L.some(x => x.tags.length), mood = String(args.mood || "");
+    const pool = mood && tagged ? L.filter(x => x.tags.some(t => String(t).includes(mood))) : L.slice();   // 有分类就按心情挑，挑不到就不给，别把不相干的塞进那一栏
+    for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+    return { kaomoji: pool.slice(0, +(args.count || args.limit) || 3).map(x => x.v) }; }
 };
 
 /* ---------- 原话核对：写进页面的原话一个字不改 ----------

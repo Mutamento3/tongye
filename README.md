@@ -40,6 +40,13 @@ claude mcp add journal -e JOURNAL_URL=http://localhost:8787 -e JOURNAL_TOKEN=同
 
 照片、聊天记录、吃了什么、读书时的书摘、那天的步数睡眠从哪来，`BACKEND.md` 第二节写了格式，书摘和健康没有也行。在本子里点「交给」传的照片，页面会在缩小之前从原图读出拍摄时间、经纬度、光圈快门（JPEG、HEIC 都读），跟着请求一起交给 agent；截图和聊天软件存下来的图一般读不到。参考后端先读 `server/journal-data/sources/` 里的几个 JSON，换成你自己的数据源就行。吃的那一栏能接 [吃了吗](https://github.com/TangfanOVO/have-you-eaten)。
 
+## 小螃蟹和颜文字
+
+| | 去哪儿拿 |
+|---|---|
+| 小螃蟹动图 | 同页没带。它们来自 [Clawd on Desk](https://github.com/rullerzhou-afk/clawd-on-desk)，美术保留所有权利，想用请先去那边问作者 |
+| 颜文字 | 本子自带一套，设置里能自己粘。想要更多、按心情分好类的，用 [fuyue-kaomoji-drawer](https://github.com/TangfanOVO/fuyue-kaomoji-drawer)（自带 325 枚，也有给 AI 用的 MCP）：参考后端设 `KAOMOJI_FILE` 指向它的库，设置里「从家里拿」就会按心情去那儿拿 |
+
 ## 页面和 agent 都守的几条
 
 - 原话一个字不改；不是原话的标「演示」，或者别放。
