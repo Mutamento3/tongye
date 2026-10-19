@@ -2965,8 +2965,7 @@ function render(fresh){var W=el.clientWidth||innerWidth;var X=window.__lineBlk?_
  X.forEach(function(b,j){var i=L.length+j,px=W*(i+1)/(n+1);var h=document.createElement("div");h.className="hang blk";h.dataset.blk=b.b;h.style.setProperty("--tw","72px");h.style.left=px+"px";h.style.top=(cy(px,W)-9)+"px";h.innerHTML=PIN+'<span class="th hntag">'+b.n+'</span>';el.appendChild(h)});
 }
 function fab(){var f=document.getElementById("addFab");f&&f.classList.toggle("lineon",on)}
-window.lineShow=function(){on=true;el.style.setProperty("--lt",top()+"px");render();el.classList.add("on");fab();try{buzz(6)}catch(e){}
- if(!L.length&&!(window.__lineBlk&&__lineBlk().length)){var t=document.getElementById("tray");t&&t.scrollIntoView({behavior:"smooth",block:"start"})}};
+window.lineShow=function(){on=true;el.style.setProperty("--lt",top()+"px");render();el.classList.add("on");fab();try{buzz(6)}catch(e){}};
 window.__lineRender=function(){if(on)render()};window.__lineOn=function(){return on};window.__lineBand=band;window.__lineHang=function(x){if(L.length>=MAX){try{toast("线上挂满了，先取下来几张")}catch(e){}return false}L.push(Object.assign({at:Date.now()},x));save();render(L.length-1);try{buzz(12)}catch(e){}return true};
 window.lineHide=function(){on=false;el.classList.remove("on","catch");fab()};
 addEventListener("resize",function(){if(on){el.style.setProperty("--lt",top()+"px");render()}});
@@ -3204,7 +3203,7 @@ function track(x,y){if(!lift)return;lift.g.style.left=x+"px";lift.g.style.top=y+
  var t=onLine?null:blkAt(x,y,lift.b);if(lift.drop&&lift.drop!==t)lift.drop.classList.remove("blkdrop");lift.drop=t;if(t)t.classList.add("blkdrop")}
 function end(x,y){if(!lift)return;var L=lift;lift=null;try{dragging=false}catch(e){}L.g.remove();if(L.b)L.b.classList.remove("blklift");if(L.drop)L.drop.classList.remove("blkdrop");var h=hl();h&&h.classList.remove("catch");
  if(x==null)return;
- if(L.src==="page"){if(band(y)){if(st().hung.indexOf(L.k)<0)st().hung.push(L.k);commit();try{buzz(12)}catch(e){}return}
+ if(L.src==="page"){if(band(y)){if(st().hung.indexOf(L.k)<0)st().hung.push(L.k);commit();try{buzz(12)}catch(e){}try{window.__blkHint&&__blkHint()}catch(e){}return}
   var t=blkAt(x,y,L.b);if(t){swap(L.k,t.dataset.b);commit();try{buzz(12)}catch(e){}}return}
  /* 从线上取下来 */
  var t2=blkAt(x,y,null);if(t2){unhang(L.k);swap(L.k,t2.dataset.b);commit();try{buzz(12)}catch(e){}return}
@@ -3316,5 +3315,18 @@ window.__bzDay=function(k){try{prev&&prev(k)}catch(e){}var B=window.journalBacke
   var th=document.getElementById("dayThumbs");if(th&&im.length){th.className="thumbs";th.innerHTML=im.map(function(u){return '<img alt="" loading="lazy" src="'+esc(u)+'">'}).join("")}
   var w=document.getElementById("dayWhere");if(w&&s.wx&&s.wx.hi!=null&&!/°C/.test(w.textContent))w.textContent=Math.round(s.wx.lo)+"–"+Math.round(s.wx.hi)+"°C"}).catch(function(){})}})();
 </script>
+<style>/* 板块挂上线时的提示（1020，只在同页） */
+.blkhint{position:fixed;left:50%;z-index:70;max-width:min(320px,calc(100vw - 48px));padding:10px 14px;font-size:13px;line-height:1.55;text-align:center;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:3px;box-shadow:0 10px 26px -14px rgba(0,0,0,.35);pointer-events:none;opacity:0;transform:translate(-50%,6px);transition:opacity .5s ease,transform .5s ease}
+.blkhint.on{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){.blkhint{transform:translate(-50%,0)}}
+</style>
+<script>/* 板块挂上线时的提示（1020，只在同页） */(function(){var K="journalBlkHint",el=null,tm=null;
+window.__blkHint=function(){var n=0;try{n=+localStorage.getItem(K)||0}catch(e){}if(n>=3)return;try{localStorage.setItem(K,n+1)}catch(e){}
+ if(el){clearTimeout(tm);el.remove();el=null}
+ var h=document.getElementById("hline"),top=h?h.getBoundingClientRect().top+92:140;
+ el=document.createElement("div");el.className="blkhint";el.setAttribute("role","status");el.textContent="板块挂上去了。拖到另一块上松手，两块换位置；放在空白处松手，回到原处。";
+ el.style.top=Math.round(top)+"px";document.body.appendChild(el);var me=el;
+ requestAnimationFrame(function(){requestAnimationFrame(function(){me.classList.add("on")})});
+ tm=setTimeout(function(){me.classList.remove("on");setTimeout(function(){me.remove();if(el===me)el=null},550)},4200)}})();</script>
 </body>
 </html>
