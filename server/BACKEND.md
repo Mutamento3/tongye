@@ -53,7 +53,7 @@ JOURNAL_TOKEN=换成一串随机字 node journal-server.mjs
 | 集合 | id | 内容 | 谁写 |
 |---|---|---|---|
 | `day` | `9.27` | **agent 做好的一页的原料**，见下面「day/<日期>」 | agent |
-| `page` | `9.27` | 她在这页上的改动：贴纸、打的字、放的照片、藏掉的零件 `{stk:[…], hide:[…], ts}` | 页面 |
+| `page` | `9.27` | 她在这页上的改动：贴纸、打的字、放的照片、藏掉的零件、对调过的板块、挂到晾衣绳上的板块 `{stk:[…], hide:[…], area:{板块:占的格子}, hung:[板块], lay, sty, ts}`。`stk` 每张带 `a:{b 压在哪块, fx, fy}`，换版式时按它跟着板块走 | 页面 |
 | `gens` | `9.27` | 存过的第 N 代 `{list:[…]}`，最多 20 | 页面 |
 | `notes` | 随机 | 批注 `{id, day, who:"her"|"me", text, at, re, b, fx, fy}`，`re` 指向这一串的第一条 | 两边 |
 | `ask` | 随机 | 点「交给枫」留下的请求 `{id, day, text, photos, photo_meta?, at, status:"new"|"done"}`，`photo_meta` 按照片地址给拍摄信息 | 页面 / agent |
