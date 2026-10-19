@@ -40,13 +40,14 @@ claude mcp add journal -e JOURNAL_URL=http://localhost:8787 -e JOURNAL_TOKEN=同
 
 照片、聊天记录、吃了什么、读书时的书摘、那天的步数睡眠从哪来，`BACKEND.md` 第二节写了格式，书摘和健康没有也行。在本子里点「交给」传的照片，页面会在缩小之前从原图读出拍摄时间、经纬度、光圈快门（JPEG、HEIC 都读），跟着请求一起交给 agent；截图和聊天软件存下来的图一般读不到。参考后端先读 `server/journal-data/sources/` 里的几个 JSON，换成你自己的数据源就行。吃的那一栏能接 [吃了吗](https://github.com/TangfanOVO/have-you-eaten)。
 
-## 小螃蟹、颜文字、吃了吗
+## 小螃蟹、颜文字、吃了吗、健康
 
 | | 去哪儿拿 |
 |---|---|
 | 小螃蟹动图 | 同页没带。它们来自 [Clawd on Desk](https://github.com/rullerzhou-afk/clawd-on-desk)，美术保留所有权利，想用请先去那边问作者 |
 | 颜文字 | 本子自带一套，设置里能自己粘。想要更多、按心情分好类的，用 [fuyue-kaomoji-drawer](https://github.com/TangfanOVO/fuyue-kaomoji-drawer)（自带 325 枚，也有给 AI 用的 MCP）：参考后端设 `KAOMOJI_FILE` 指向它的库，设置里「从家里拿」就会按心情去那儿拿 |
 | 吃了吗 | 「吃了吗」那栏和 agent 读到的吃喝，来自 [吃了吗](https://github.com/TangfanOVO/have-you-eaten)：参考后端设 `HAVE_YOU_EATEN_URL` 指向它（本机跑着就是 `http://127.0.0.1:8770`），就按日期读它记的每一顿，不用改它 |
+| 健康 | 贴纸栏「引用」里的「健康」那一页，还有 agent 写页时自动贴上的「那天的身体」。数据要自己接：参考后端读 `sources/health.json`（格式见 `BACKEND.md` 第二节），手机、手环里的步数睡眠要你自己导进这个文件，或者换成你自己的后端；各家手机和手环我们没做对接。没接的话这一栏是空的，不影响别的 |
 
 ## 页面和 agent 都守的几条
 
