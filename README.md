@@ -58,7 +58,7 @@ claude mcp add journal -e JOURNAL_URL=http://localhost:8787 -e JOURNAL_TOKEN=同
 
 ## 素材
 
-表情、图标、胶带花色、博物馆藏品各有出处和许可，见 [NOTICE.md](NOTICE.md)。演示照片是作者自己拍的，不在开源协议里。
+表情、图标、胶带花色、博物馆藏品各有出处和许可，见 [NOTICE.md](NOTICE.md)。字贴、印章、小动物这些贴纸是作者自己画的，演示照片是作者自己拍的，都不在开源协议里。
 
 ## 协议
 
@@ -69,3 +69,5 @@ claude mcp add journal -e JOURNAL_URL=http://localhost:8787 -e JOURNAL_TOKEN=同
 | 只在自己手里用 | 什么都不用做，随便改 |
 | 发出去，或者放到网上给别人用 | 整个项目按 AGPL-3.0 开源 |
 | 商用，但不想开源 | [开一个 issue](https://github.com/TangfanOVO/tongye/issues/new) 来拿授权 |
+
+让 AI 读了这个仓库的代码、版式数据或样式再改写出来的东西，一样是衍生作品，照 AGPL-3.0 办；商用又不想开源，要先拿授权（见 [COMMERCIAL.md](COMMERCIAL.md)）。
