@@ -58,7 +58,7 @@ claude mcp add journal -e JOURNAL_URL=http://localhost:8787 -e JOURNAL_TOKEN=同
 
 ## 素材
 
-表情、图标、胶带花色、博物馆藏品各有出处和许可，见 [NOTICE.md](NOTICE.md)。字贴、印章、小动物这些贴纸是作者自己画的，演示照片是作者自己拍的，都不在开源协议里。
+表情、图标、胶带花色、博物馆藏品各有出处和许可，见 [NOTICE.md](NOTICE.md)。字贴、印章、小动物这些贴纸是作者画的，演示照片是作者自己拍的，都不在开源协议里。
 
 ## 协议
 

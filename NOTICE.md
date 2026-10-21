@@ -13,7 +13,7 @@
 | 存长图 | [html-to-image](https://github.com/bubkoo/html-to-image) | W.Y.（bubkoo） | MIT |
 | 字体 | 从 Google Fonts 现取，不随仓库分发 | 各字体作者 | 各自的许可（多为 OFL） |
 
-**我们自己画的**：贴纸栏里的字贴、形状、花边、印章、小动物、便签、天气贴纸，还有页面上画的邮戳和批章，是作者自己画的，© 2026 幡幡（TangfanOVO），保留所有权利，不在 AGPL-3.0 里。在同页和按 AGPL-3.0 开源的 fork 里可以原样留着；别的用法，比如拿去别的项目、闭源商用，请先[开一个 issue](https://github.com/TangfanOVO/tongye/issues/new) 来问。
+**幡幡画的**：贴纸栏里的字贴、形状、花边、印章、小动物、便签、天气贴纸，还有页面上画的邮戳和批章，都是幡幡画的，© 2026 幡幡（TangfanOVO），保留所有权利，不在 AGPL-3.0 里。在同页和按 AGPL-3.0 开源的 fork 里可以原样留着；别的用法，比如拿去别的项目、闭源商用，请先[开一个 issue](https://github.com/TangfanOVO/tongye/issues/new) 来问。
 
 **演示照片**：`book/index.html` 里嵌的演示照片是作者自己拍的（2026 年 9 月，南澳），版权归作者，不在 AGPL-3.0 里。fork 时可以原样留着当演示；拿去做别的用途，请换成你自己的照片。演示里的对话是改写过的演示句。
 
@@ -41,6 +41,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-Original artwork (word stickers, shapes, borders, stamps, animals, memo papers, weather stickers, and the postmark and approval seal drawn on the page) © 2026 幡幡 (TangfanOVO), all rights reserved, not covered by AGPL-3.0. It may stay as-is in this project and its AGPL-3.0 forks; any other use, including closed-source commercial use, needs permission.
+Original artwork drawn by 幡幡 (word stickers, shapes, borders, stamps, animals, memo papers, weather stickers, and the postmark and approval seal drawn on the page) © 2026 幡幡 (TangfanOVO), all rights reserved, not covered by AGPL-3.0. It may stay as-is in this project and its AGPL-3.0 forks; any other use, including closed-source commercial use, needs permission.
 
 Copyright notices: Fluent Emoji — Copyright (c) Microsoft Corporation. Phosphor Icons — Copyright (c) 2023 Phosphor Icons. pattern.monster — Copyright (c) 2020 - 2023 pattern.monster. html-to-image — Copyright (c) 2017-2026 W.Y. Hero Patterns by Steve Schoger, licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). dddoodle by Seb (fffuel.co), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); filters removed, coordinates rounded, recolored to follow the page style.
